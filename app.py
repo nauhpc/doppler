@@ -25,7 +25,7 @@ app = Flask(__name__)
 
 # Get the efficiency score normalization options
 config = ConfigParser()
-config.read('config.ini.sample')
+config.read('config.ini')
  
 
 # Get the DB args
@@ -39,7 +39,7 @@ db = jobstats.Jobstats(host, username, password)
 
 
 # Get job normalization args
-config.read('config.ini.sample')
+config.read('config.ini')
 normalize_scores_options = config['SCORES']['normalize']
 normalize_by_score       = False
 ideal_score              = 0
