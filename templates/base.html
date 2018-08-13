@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B" crossorigin="anonymous">
+		<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/js/bootstrap.min.js" integrity="sha384-o+RDsa0aLu++PJvFqy8fFScvbHFLtbvScb8AjopnFD+iEQ7wo/CG0xlczd+2O/em" crossorigin="anonymous"></script>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    </head>
+
+    <body>
+   	    <nav class="navbar navbar-expand-lg" style="background:#003466;">
+            <a class="navbar-brand" href="{{url_for('home', view=view, time=time)}}">
+                <img src="{{url_for('static', filename='monsoon_logo.png')}}" width="60" height="30" alt="">
+            </a>
+
+        	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+          	</button>
+		  
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+				<ul class="navbar-nav">
+                    {% if view == 'cluster' %}
+			  		<li class="nav-item active">
+                    {% else %}
+                    <li class="nav-item">
+                    {% endif %}
+                        <a class="nav-link" href="{{url_for('home', view='cluster', time=time)}}">Cluster</a>
+			        </li>
+
+                    {% if view == 'accounts' or not view %}
+			  		<li class="nav-item active">
+                    {% else %}
+                    <li class="nav-item">
+                    {% endif %}
+                        <a class="nav-link" href="{{url_for('home', view='accounts', time=time)}}">Accounts</a>
+			        </li>
+
+                    {% if view == 'users' %}
+			  		<li class="nav-item active">
+                    {% else %}
+                    <li class="nav-item">
+                    {% endif %}
+                        <a class="nav-link" href="{{url_for('home', view='users', time=time)}}">Users</a>
+			        </li>
+			        			        		        
+                    <li class="nav-item dropdown">
+				        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+				            Timeline
+				        </a>
+				        
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                            <a class="dropdown-item {{'active' if time == 'W'}}" href="{{url_for(request.endpoint, account=account_name, user_name=user_name, view=view, time='W')}}">Week</a>
+				            
+                            <a class="dropdown-item {{'active' if time == 'M'}}" href="{{url_for(request.endpoint, account=account_name, user_name=user_name, view=view, time='M')}}">Month</a>
+				            
+                            <a class="dropdown-item {{'active' if time == 'Q'}}" href="{{url_for(request.endpoint, account=account_name, user_name=user_name, view=view, time='Q')}}">Quarter</a>
+				        </div>
+			        </li>
+			    </ul>
+		    </div>
+
+            <div class="pull-right">
+                <form id="search_box" class="form-inline pull-right my-2 my-lg-0">
+                    <input class="form-control mr-sm-2" id="search" name="search" type="search" placeholder="Search" aria-label="Search">
+					
+					<div class="btn-group">
+                        <button id="search_primary" type="submit" class="btn btn-success" style="width:150px;" formaction="{{url_for('viewAccount')}}">
+                        </button>
+					    
+						<button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							<span class="sr-only">Toggle Dropdown</span>
+					  	</button>
+					    
+						<div class="dropdown-menu">
+							<button id="search_secondary" class="dropdown-item" type="button">
+                            </button>
+					 	</div>
+					</div>
+                </form>
+                
+                <script>
+                    if(document.cookie == 'search=users') {
+                        $('#search_primary').text('Search Users');
+                        $('#search_primary').attr('formaction', '{{url_for("viewUser", time=time, view=view)}}');
+                        $('#search_secondary').text('Search Accounts');
+                        $('#search_secondary').attr('formaction', '{{url_for("viewAccount", time=time, view=view)}}');
+                    } else {
+                        $('#search_primary').text('Search Accounts');
+                        $('#search_primary').attr('formaction', '{{url_for("viewAccount", time=time, view=view)}}');
+                        $('#search_secondary').text('Search Users');
+                        $('#search_secondary').attr('formaction', '{{url_for("viewUser", time=time, view=view)}}');
+                    }
+
+                    $('#search_secondary').click(function() {
+                        if ($.trim($('#search_primary').text()) == 'Search Accounts') {
+                            $('#search_primary').text('Search Users');
+                            $('#search_primary').attr('formaction', '{{url_for("viewUser", time=time, view=view)}}');
+                            $('#search_secondary').text('Search Accounts');
+                            $('#search_secondary').attr('formaction', '{{url_for("viewAccount", time=time, view=view)}}');
+                            document.cookie = "search=users";
+                        } else {
+                            $('#search_primary').text('Search Accounts');
+                            $('#search_primary').attr('formaction', '{{url_for("viewAccount", time=time, view=view)}}');
+                            $('#search_secondary').text('Search Users');
+                            $('#search_secondary').attr('formaction', '{{url_for("viewUser", time=time, view=view)}}');
+                            document.cookie = "search=accounts";
+                        }   
+                    });
+                </script>
+            </div>
+		</nav>
+
+        <div class="container-fluid">
+            {% block content %}{% endblock %}
+        </div>
+    </body>
+
+	<footer class="page-footer font-small blue pt-4">
+		<div class="container-fluid text-center text-md-left">
+            <div class="footer-copyright text-center py-3">
+                <a href="https://nau.edu/hpc">NAU HPC</a>
+                This site uses cookies
+            </div>
+        </div>
+	</footer>
+</html>

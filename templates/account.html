@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<title> {{account_name}} </title>
+
+<div class="row">
+    <div class="col-md-12">
+        <h4 align="center" class="display-5"> account stats for {{account_name}} {{days}}</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 border">
+        <embed src="{{url_for('renderAccountLineGraph', account_name=account_name, days=timeframe)}}">
+    </div>
+    <div class="col-md-6 border">
+        <embed src="{{url_for('renderAccountUsersGraph', account_name=account_name, days=timeframe)}}">	
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card"> 
+            <div class="card-body">
+                <h5 class="card-title"> Total Stats </h5>
+                <table class="table table-hover table-striped">
+                     <tr> <th>cores</th> <th>memory</th>  <th>time limit</th>  <th>total efficiency</th></tr>
+                     <tr> <td>{{total['cores']}}</td> <td>{{total['memory']}}</td> <td>{{total['tlimit']}}</td> <td>{{total['total']}}</td></tr>    
+                </table>
+            </div>
+        </div>
+    </div>    
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"> User Stats </h5>
+                <table class="table table-hover table-striped">
+                    <tr> <th>user</th> <th>cores</th> <th>memory</th> <th>time limit</th> <th>total efficiency</th> <th>jobs</th></tr>
+                    {% for i in users|sort() %}
+                    <tr> 
+                        <td><a href={{url_for('viewUser', user_name=i)}}>{{i}}</a></td> 
+                        <td>{{users[i]['cores']|round(2) if users[i]['cores'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
+                        <td>{{users[i]['memory']|round(2) if users[i]['memory'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
+                        <td>{{users[i]['tlimit']|round(2) if users[i]['tlimit'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
+                        <td>{{users[i]['total']|round(2) if users[i]['total'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
+                        <td>{{users[i]['jobsum']|round(2) if users[i]['jobsum'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
+                    </tr>
+                    {%endfor%}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

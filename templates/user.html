@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<title> {{user_name}} </title>
+
+<div class="row">
+    <div class="col-md-12">
+        <h4 align="center" class="display-5"> stats for user {{user_name}}</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 border">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    {% for acc in accounts %}
+					<li class="nav-item">
+						<a class="nav-link" id="{{acc}}-tab" data-toggle="tab" href="#{{acc}}" role="tab" aria-controls="{{acc}}" aria-selected="false">{{acc}}</a>
+                    </li>
+					{% endfor %}
+                </ul> 
+			</div>
+               
+                
+            <div class="card-body"> 
+                <div class="tab-content" id="accountLineGraphs">
+                    {% for acc in accounts %}
+                    <div class="tab-pane fade" id="{{acc}}" role="tabpanel" aria-labelledby="{{acc}}-tab"> 
+						<embed src="{{url_for('renderUserAccountLineGraph', user_name=user_name, days=timeframe, account=acc)}}">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 border">
+        <div class="card"> 
+            <div class="card-body">
+                <h5 class="card-title"> Total Stats </h5>
+                
+                <table class="table table-hover table-striped">
+                     <tr> <th>account</th> <th>cores</th> <th>memory</th>  <th>time limit</th>  <th>total efficiency</th></tr>
+                     {% for acc in accounts %}
+                     <tr><th><a href={{url_for('viewAccount', account_name=acc)}}>{{acc}}</a></th> <td>{{accounts[acc]['cores']}}</td> <td>{{accounts[acc]['memory']}}</td> <td>{{accounts[acc]['tlimit']}}</td> <td>{{accounts[acc]['total']}}</td></tr>    
+                     {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

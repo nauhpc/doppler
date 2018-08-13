@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<title> Monsoon Jobstats </title>
+
+<!-- graphs -->
+<div class="row">
+    <div class="col-md-6 border">
+        {% if view == 'cluster' %}
+        <embed src="{{url_for('renderClusterLineGraph', days=time)}}">
+        {% elif view == 'users' %}    
+        <embed src="{{url_for('renderUsersLineGraph', days=time)}}">
+        {% else %}
+        <embed src="{{url_for('renderAccountsLineGraph', days=time)}}">
+        {% endif %}
+    </div>
+    <div class="col-md-6 border">
+        {% if view == 'users' %}
+        <embed src={{url_for('renderUsersBarGraph', days=time)}}>   
+        {% else %}
+        <embed src={{url_for('renderAccountsBarGraph', days=time)}}>   
+        {% endif %}
+    </div>
+</div>
+    
+<!-- account ranks  -->
+<div class="row">    
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"> 
+                    {% if view in ['cluster', 'accounts'] %}
+                        {% if time == 'W' %}
+                        Weekly Account Ranking 
+                        {% elif time == 'M' %}
+                        Monthly Account Ranking 
+                        {% else %}
+                        Quarterly Account Ranking 
+                        {% endif %}
+                    {% else %}
+                        {% if time == 'W' %}
+                        Weekly User Ranking 
+                        {% elif time == 'M' %}
+                        Monthly User Ranking 
+                        {% else %}
+                        Quarterly User Ranking 
+                        {% endif %}
+                    {% endif %}
+                </h5>
+                <table class="table table-hover table-striped">
+                    <tr> <th>rank</th> <th>account</th><th>cores</th><th>memory</th><th>time limit</th>  <th>total efficiency</th></tr>
+                    {% for i in account_ranks %}
+                    <tr>
+                        <th scope="row">{{i[0]}}</th>
+                        {% if view == 'users' %} 
+                        <td><a href={{url_for('viewUser', user_name=i[1], time=time, view=view)}}>{{i[1]}}</a></td> 
+                        {% else %}
+                        <td><a href={{url_for('viewAccount', account_name=i[1], time=time, view=view)}}>{{i[1]}}</a></td> 
+                        {% endif %}
+                        <td>{{i[2]|round(2) if i[2] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
+                        <td>{{i[3]|round(2) if i[3] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
+                        <td>{{i[4]|round(2) if i[4] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td>
+                        <th scope="row">{{i[5]|round(2) if i[5] != '-' else i[5]}}</th> 
+                    </tr>
+                    {% endfor %}
+                    </table>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
