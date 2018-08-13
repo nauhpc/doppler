@@ -538,11 +538,9 @@ class Jobstats:
         cursor.execute(query, (since,))
 
         jobs = [i[0] for i in cursor]
-        average = reduce(lambda x, y: x + y, jobs)
+        average = reduce(lambda x, y: x + y, jobs, 0)
 
         conn.close()
-
-        average = average
 
         return average
 
