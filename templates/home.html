@@ -28,8 +28,10 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title"> 
-                    {% if view in ['cluster', 'accounts'] %}
+                <h5 class="card-title">
+                    {% if not view and not time %}
+                    Weekly Account Ranking
+                    {% elif view in ['cluster', 'accounts'] or not view %}
                         {% if time == 'W' %}
                         Weekly Account Ranking 
                         {% elif time == 'M' %}
