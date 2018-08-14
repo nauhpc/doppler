@@ -2,7 +2,7 @@
 
 ## Overview
 
-Provides a web frontend for cluster users to view their batch job usage stats.
+Provides a web frontend for cluster users to view how efficient they are in regards to use of requested resources. Provides a ranking system and graphs to help users and groups improve their usage.
 
 ## Installation
 
