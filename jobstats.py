@@ -4,20 +4,19 @@ Desc: Library for extracting and parsing information from the jobstats MySQL
 
 Authors:
     - Chance Nelson <chance-nelson@nau.edu>
+    - Ian Otto <iso-ian@nau.edu>
 """
 
-
-import time
-import datetime 
-import mysql.connector.pooling as mysql
-import operator
+import datetime
 from functools import reduce
+
+import mysql.connector.pooling as mysql
 
 
 class Jobstats:
     def __init__(self, host, username, password, db='jobstats'):
-        self.cnx_pool = mysql.MySQLConnectionPool(pool_name='jobstats-site', 
-                                                  pool_size=32, user=username, 
+        self.cnx_pool = mysql.MySQLConnectionPool(pool_name='jobstats-site',
+                                                  pool_size=32, host=host, user=username,
                                                   password=password,
                                                   database=db)
 
@@ -40,10 +39,10 @@ class Jobstats:
 
             users = [i for i in users if i[0] in jobs.keys()]
 
-            return list(reversed(sorted(users, 
-                                        key=lambda user:   
-                                                normalize(user[1], 
-                                                          since=since, 
+            return list(reversed(sorted(users,
+                                        key=lambda user:
+                                                normalize(user[1],
+                                                          since=since,
                                                           job_count=jobs[user[0]]
                                                          )
                                         )))
@@ -67,10 +66,10 @@ class Jobstats:
 
             accounts = [i for i in accounts if i[0] in jobs.keys()]
 
-            return list(reversed(sorted(accounts, 
-                                        key=lambda account:   
-                                                normalize(account[1], 
-                                                          since=since, 
+            return list(reversed(sorted(accounts,
+                                        key=lambda account:
+                                                normalize(account[1],
+                                                          since=since,
                                                           job_count=jobs[account[0]]
                                                          )
                                         )))
@@ -87,8 +86,8 @@ class Jobstats:
 
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
-        
-        cursor.execute(query, (account, since))
+
+        cursor.execute(query, (user, since))
 
         jobsTotal = 0
 
@@ -107,7 +106,7 @@ class Jobstats:
 
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute(query, (account, since))
 
         for (username, jobsum) in cursor:
@@ -146,10 +145,10 @@ class Jobstats:
         users = {}
 
         query  = ("SELECT username, jobsum FROM jobs WHERE date >= %s")
- 
+
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute(query, (since,))
 
         for (user, jobsum) in cursor:
@@ -171,10 +170,10 @@ class Jobstats:
         accounts = {}
 
         query  = ("SELECT account, jobsum FROM jobs WHERE date >= %s")
- 
+
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute(query, (since,))
 
         for (account, jobsum) in cursor:
@@ -192,7 +191,7 @@ class Jobstats:
     def getFullAccountList(self, date, users=False):
         accounts = {}
         query    = ("SELECT * FROM jobs WHERE date = %s")
-        
+
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
 
@@ -218,15 +217,15 @@ class Jobstats:
                 oldMemory = accounts[account]['memory']
                 oldTLimit = accounts[account]['tlimit']
                 oldJobSum = accounts[account]['jobsum']
-                
+
                 if oldCores and cores:
                     cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
                             (oldJobSum + jobSum)
-                
+
                 if oldMemory and memory:
                     memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
                              (oldJobSum + jobSum)
-                
+
                 if oldTLimit and tLimit:
                     tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
                              (oldJobSum + jobSum)
@@ -248,10 +247,10 @@ class Jobstats:
 
         stats  = {}
         query  = ("SELECT * FROM jobs WHERE date >= %s")
-        
+
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute(query, (since,))
 
         for i in cursor:
@@ -268,7 +267,7 @@ class Jobstats:
                 oldMemory = stats[date]['memory']
                 oldTLimit = stats[date]['tlimit']
                 oldJobSum = stats[date]['jobsum']
-                
+
                 if oldCores:
                     if cores:
                         cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
@@ -276,7 +275,7 @@ class Jobstats:
 
                     else:
                         cores = oldCores
-                
+
                 if oldMemory:
                     if memory:
                         memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
@@ -284,7 +283,7 @@ class Jobstats:
 
                     else:
                         memory = oldMemory
-                
+
                 if oldTLimit:
                     if tLimit:
                         tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
@@ -298,7 +297,7 @@ class Jobstats:
             stats[date] = {'cores': cores, 'memory': memory,
                            'tlimit': tLimit, 'total': total,
                            'jobsum': jobSum}
-        
+
         conn.close()
 
         return stats
@@ -310,10 +309,10 @@ class Jobstats:
 
         stats = {}
         query = ("SELECT * FROM jobs WHERE account = %s AND date >= %s")
-        
+
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute(query, (account, since))
 
         for i in cursor:
@@ -329,7 +328,7 @@ class Jobstats:
                 oldMemory = stats[date]['memory']
                 oldTLimit = stats[date]['tlimit']
                 oldJobSum = stats[date]['jobsum']
-                
+
                 if oldCores:
                     if cores:
                         cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
@@ -337,7 +336,7 @@ class Jobstats:
 
                     else:
                         cores = oldCores
-                
+
                 if oldMemory:
                     if memory:
                         memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
@@ -345,7 +344,7 @@ class Jobstats:
 
                     else:
                         memory = oldMemory
-                
+
                 if oldTLimit:
                     if tLimit:
                         tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
@@ -379,7 +378,7 @@ class Jobstats:
             oldMemory = stats[date]['memory']
             oldTLimit = stats[date]['tlimit']
             oldJobSum = stats[date]['jobsum']
-            
+
             if oldCores:
                 if cores:
                     cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
@@ -387,7 +386,7 @@ class Jobstats:
 
                 else:
                     cores = oldCores
-            
+
             if oldMemory:
                 if memory:
                     memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
@@ -395,7 +394,7 @@ class Jobstats:
 
                 else:
                     memory = oldMemory
-            
+
             if oldTLimit:
                 if tLimit:
                     tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
@@ -409,19 +408,19 @@ class Jobstats:
         if jobSum > 0:
             total = (cores + memory + tLimit) / 3
 
-        return {'cores': round(cores, 2), 'memory': round(memory, 2), 
-                'tlimit': round(tLimit, 2), 'total': round(total, 2), 
+        return {'cores': round(cores, 2), 'memory': round(memory, 2),
+                'tlimit': round(tLimit, 2), 'total': round(total, 2),
                 'jobsum': round(jobSum, 2)}
 
 
     def getAccountUsers(self, account):
         query = ("SELECT username FROM jobs WHERE account = %s")
-        
+
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
 
         cursor.execute(query, (account,))
-        
+
         users = [i[0] for i in cursor]
         users = list(set(users))
 
@@ -440,7 +439,7 @@ class Jobstats:
         query  = ("SELECT * FROM jobs WHERE username = %s AND date >= %s AND (account = %s OR %s = '')")
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute(query, (user, since, account, account))
 
         if as_list:
@@ -459,7 +458,7 @@ class Jobstats:
             oldMemory = date[4]
             oldTLimit = date[5]
             oldJobSum = date[7]
-            
+
             if oldCores:
                 if cores:
                     cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
@@ -467,7 +466,7 @@ class Jobstats:
 
                 else:
                     cores = oldCores
-            
+
             if oldMemory:
                 if memory:
                     memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
@@ -475,7 +474,7 @@ class Jobstats:
 
                 else:
                     memory = oldMemory
-            
+
             if oldTLimit:
                 if tLimit:
                     tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
@@ -491,8 +490,8 @@ class Jobstats:
 
         conn.close()
 
-        return {'cores': round(cores, 2), 'memory': round(memory, 2), 
-                'tlimit': round(tLimit, 2), 'total': round(total, 2), 
+        return {'cores': round(cores, 2), 'memory': round(memory, 2),
+                'tlimit': round(tLimit, 2), 'total': round(total, 2),
                 'jobsum': round(jobSum, 2)}
 
 
@@ -503,7 +502,7 @@ class Jobstats:
         cursor = conn.cursor()
 
         cursor.execute(query, (user,))
-    
+
         accounts = [i for i in cursor]
 
         conn.close()
@@ -513,7 +512,7 @@ class Jobstats:
 
     def getAccountList(self):
         query = ("SELECT account FROM jobs")
-        
+
         conn   = self.cnx_pool.get_connection()
         cursor = conn.cursor()
 
@@ -539,11 +538,9 @@ class Jobstats:
         cursor.execute(query, (since,))
 
         jobs = [i[0] for i in cursor]
-        average = reduce(lambda x, y: x + y, jobs) 
+        average = reduce(lambda x, y: x + y, jobs, 0)
 
         conn.close()
-
-        average = average
 
         return average
 
@@ -556,7 +553,7 @@ class Jobstats:
         cursor.execute(query)
 
         users = list(set([i[0] for i in cursor]))
-        
+
         conn.close()
 
         return users

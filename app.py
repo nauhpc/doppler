@@ -10,13 +10,15 @@ Authors:
 
 
 import sys
-from flask import Flask, Blueprint, jsonify, render_template, request, url_for, redirect
-import pygal
-import jobstats
+import time
+from configparser import ConfigParser
 from datetime import date, timedelta
 from difflib import SequenceMatcher
-from configparser import ConfigParser
-import time
+
+import pygal
+from flask import Flask, render_template, request, url_for, redirect
+
+import jobstats
 
 app = Flask(__name__)
 
@@ -60,7 +62,7 @@ def normalize(score, job_count=0, since=7):
     Returns (double):
         Normalized score based on target total score to meet in config file
     """
-    # Attempt to notmalize the score
+    # Attempt to normalize the score
     numerator   = score
     denominator = 1
 
@@ -109,7 +111,10 @@ def renderAccountsBarGraph():
     bar_graph = pygal.Bar(range=[0, 100])
     bar_graph.title = 'Total Efficiency per Account'
     for i in sorted(accounts, key=lambda account: account[0]):
-        bar_graph.add(i[0], normalize(i[1]))
+        bar_graph.add(i[0], [{
+            "value": normalize(i[1]),
+            "xlink": url_for("viewAccount", account_name=i[0])
+        }])
 
     return bar_graph.render_response()
 
@@ -131,7 +136,10 @@ def renderUsersBarGraph():
     bar_graph = pygal.Bar(range=[0, 100])
     bar_graph.title = 'Total Efficiency per User'
     for i in sorted(users, key=lambda user: user[0]):
-        bar_graph.add(i[0], normalize(i[1]))
+        bar_graph.add(i[0], [{
+            "value": normalize(i[1]),
+            "xlink": url_for("viewUser", user_name=i[0])
+        }])
 
     return bar_graph.render_response()
 
@@ -299,7 +307,7 @@ def home():
     time      = getTimeframe(request.args.get('time'))
     timeframe = request.args.get('time')
 
-    topAccounts = []
+    top_accounts = []
 
     # Default to accounts view
     if not view or view in ['cluster', 'accounts']:
@@ -404,7 +412,10 @@ def renderAccountUsersGraph(account_name):
     pie_graph = pygal.Pie()
     pie_graph.title = 'Jobs Per User'
     for i in sorted(data.keys()):
-        pie_graph.add(i, data[i])
+        pie_graph.add(i, [{
+            "value": data[i],
+            "xlink": url_for("viewUser", user_name=i)
+        }])
     
     return pie_graph.render_response()
 
