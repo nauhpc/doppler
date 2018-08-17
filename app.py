@@ -6,6 +6,7 @@ Desc: Main source file for the jobstats site
 
 Authors:
     - Chance Nelson <chance-nelson@nau.edu>
+    - Ian Otto <iso-ian@nau.edu>
 """
 
 
