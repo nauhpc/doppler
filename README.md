@@ -14,7 +14,7 @@ Provides a web frontend for cluster users to view how efficient they are in rega
 5. Parent web server (nginx recommended)
 
 ### Install
-1. Clone and enter repository `git clone https://github.com/nauhpc/jobstats-site.git  && cd jobstats-site`
+1. Clone and enter repository `git clone https://github.com/nauhpc/doppler.git  && cd doppler`
 2. Install dependencies `pip install -r requirements.txt`
 
 ### Running behind a WSGI Server (ex. gunicorn)
