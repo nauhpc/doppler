@@ -23,6 +23,9 @@ Provides a web frontend for cluster users to view how efficient they are in rega
 gunicorn -w 4 app:app
 ```
 2. Set your web server to be a reverse-proxy for the WSGI server
+
+
+NGINX:
 ```
 server {
     listen 80;
@@ -35,5 +38,15 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
+```
+
+
+Apache:
+```
+<VirtualHost *:80>
+    ServerName 134.114.32.210
+    ProxyPreserveHost on
+    ProxyPass "/" "http://127.0.0.1:8000"
+</VirtualHost>
 ```
 Reference yout WSGI server's [guide](http://gunicorn.org/#quickstart) for more information
