@@ -110,7 +110,16 @@ def renderAccountsBarGraph():
 
     # Render pie graph
     bar_graph = pygal.Bar(range=[0, 100])
-    bar_graph.title = 'Total Efficiency per Account'
+    
+    if days == 7:
+        bar_graph.title = 'Account Efficiency for the Week'
+    elif days == 31:
+        bar_graph.title = 'Account Efficiency for the Month'
+    elif days == 100:
+        bar_graph.title = 'Account Efficiency for the Quarter'
+    else:
+        bar_graph.title = 'Account Efficiency'
+    
     for i in sorted(accounts, key=lambda account: account[0]):
         bar_graph.add(i[0], [{
             "value": normalize(i[1]),
@@ -135,7 +144,16 @@ def renderUsersBarGraph():
 
     # Render pie graph
     bar_graph = pygal.Bar(range=[0, 100])
-    bar_graph.title = 'Total Efficiency per User'
+    
+    if days == 7:
+        bar_graph.title = 'User Efficiency for the Week'
+    elif days == 31:
+        bar_graph.title = 'User Efficiency for the Month'
+    elif days == 100:
+        bar_graph.title = 'User Efficiency for the Quarter'
+    else:
+        bar_graph.title = 'User Efficiency'
+    
     for i in sorted(users, key=lambda user: user[0]):
         bar_graph.add(i[0], [{
             "value": normalize(i[1]),
@@ -163,8 +181,16 @@ def renderUsersLineGraph():
 
     # Render the line graph
     line_graph       = pygal.Line(x_label_rotation=30, range=[0, 100])
-    line_graph.title = 'User Efficiency over Time'
-
+ 
+    if days == 7:
+        line_graph.title = 'User Efficiency for the Week'
+    elif days == 31:
+        line_graph.title = 'User Efficiency for the Month'
+    elif days == 100:
+        line_graph.title = 'User Efficiency for the Quarter'
+    else:
+        line_graph.title = 'User Efficiency'
+    
     line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
     users               = {}
 
@@ -210,8 +236,16 @@ def renderAccountsLineGraph():
         days_delta = 7
 
     # Render the line graph
-    line_graph       = pygal.Line(x_label_rotation=30, range=[0, 100])
-    line_graph.title = 'Account Efficiency over Time'
+    line_graph = pygal.Line(x_label_rotation=30, range=[0, 100])
+ 
+    if days == 7:
+        line_graph.title = 'Account Efficiency for the Week'
+    elif days == 31:
+        line_graph.title = 'Account Efficiency for the Month'
+    elif days == 100:
+        line_graph.title = 'Account Efficiency for the Quarter'
+    else:
+        line_graph.title = 'Account Efficiency'
 
     line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
     accounts            = {}
@@ -256,8 +290,16 @@ def renderClusterLineGraph():
     if days > 31:
         days_delta = 7
 
-    line_graph       = pygal.Line(x_label_rotation=30, range=[0, 100])
-    line_graph.title = 'Cluster Efficiency over Time'
+    line_graph = pygal.Line(x_label_rotation=30, range=[0, 100])
+
+    if days == 7:
+        line_graph.title = 'Cluster Efficiency for the Week'
+    elif days == 31:
+        line_graph.title = 'Cluster Efficiency for the Month'
+    elif days == 100:
+        line_graph.title = 'Cluster Efficiency for the Quarter'
+    else:
+        line_graph.title = 'Cluster Efficiency'
 
     line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
     stats               = db.getClusterStats(date.today() - timedelta(days))
