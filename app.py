@@ -57,7 +57,7 @@ def normalize(score, job_count=0, since=7):
 
     Args:
         score (double): score to normalize
-        job_count (int) (optional) (DEPRECATED): Job count of user
+        job_count (int) (optional): Job count of user
         since (int) (optional) (DEPRECATED): Timeframe of score
 
     Returns (double):
@@ -377,10 +377,11 @@ def home():
             data = db.getUserStats(accName, 
                                    since=(date.today() - timedelta(time)))
 
-        cores  = '-'
-        memory = '-'
+        cores   = '-'
+        memory  = '-'
         t_limit = '-'
-        total  = '-'
+        total   = '-'
+        job_sum = '-'
         
         if data['cores']:
             cores = data['cores']
@@ -393,10 +394,13 @@ def home():
         
         if data['total']:
             total = data['total']
-            total = normalize(int(total))
+            total = int(normalize(total, job_count=data['jobsum']))
+
+        if data['jobsum']:
+            job_sum = data['jobsum']
 
         account_ranks.append([len(account_ranks)+1, accName, cores,
-                              memory, t_limit, total])
+                              memory, t_limit, total, job_sum])
 
     return render_template('home.html', account_ranks=account_ranks, view=view, time=timeframe)
 
