@@ -95,28 +95,28 @@ def getTimeframe(days):
     return days
 
 
-@app.route('/accountsbargraph.svg')
-def renderAccountsBarGraph():
+@app.route('/accountsboxplot.svg')
+def renderAccountsBoxPlot():
     """
-    Desc: Endpoint for the account lising bar graph on the home page
+    Desc: Endpoint for the account lising box plot on the home page
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    return renderGraph(pygal.Bar, 'account')
+    return renderGraph(pygal.Box, 'Account')
 
 
-@app.route('/usersbargraph.svg')
-def renderUsersBarGraph():
+@app.route('/usersboxplot.svg')
+def renderUsersBoxPlot():
     """
-    Desc: Endpoint for the user listing bar graph on the home page
+    Desc: Endpoint for the user listing box plot on the home page
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    return renderGraph(pygal.Bar, 'user')
+    return renderGraph(pygal.Box, 'User')
 
 
 @app.route('/userslinegraph.svg')
@@ -128,7 +128,7 @@ def renderUsersLineGraph():
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    return renderGraph(pygal.Line, 'user')
+    return renderGraph(pygal.Line, 'User')
 
 
 @app.route('/accountslinegraph.svg')
@@ -140,7 +140,19 @@ def renderAccountsLineGraph():
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    renderGraph(pygal.Line, 'account')
+    return renderGraph(pygal.Line, 'Account')
+
+
+@app.route('/clusterlinegraph.svg')
+def renderClusterLineGraph():
+    """
+    Desc: Endpoint for cluster line graph on the home page
+
+    Args:
+        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
+                                arguments
+    """
+    return renderGraph(pygal.Line, 'cluster')
 
 
 def renderGraph(graph_function, data_set):
@@ -163,7 +175,7 @@ def renderGraph(graph_function, data_set):
         days_delta = 7
 
     # Render the line graph
-    graph = graph_function(range=[0, 100])
+    graph = graph_function(range=[0, 100], show_x_labels=False)
  
     if days == 7:
         graph.title = data_set + ' Efficiency for the Week'
@@ -174,8 +186,8 @@ def renderGraph(graph_function, data_set):
     else:
         graph.title = data_set + ' Efficiency'
 
-    x_labels    = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
-    data_points = {}
+    graph.x_labels    = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
+    data_points       = {}
 
     if data_set.lower() == 'account':
         # Get the top ten accounts
@@ -196,7 +208,7 @@ def renderGraph(graph_function, data_set):
         total  = []
 
         dates = data_points.keys()
-        for i in x_labels:
+        for i in graph.x_labels:
             stat = {'cores': None, 'memory': None, 'tlimit': None, 'total': None}
             if i in dates:
                 stat = data_points[i]
@@ -217,7 +229,7 @@ def renderGraph(graph_function, data_set):
         graph.add('time limit', tLimit)
         graph.add('total efficiency', total)
 
-        return graph.render()
+        return graph.render_response()
 
 
     # Get the daily stats for the top ten users/accounts
@@ -239,131 +251,10 @@ def renderGraph(graph_function, data_set):
 
     # Add each account in alphabetical order
     for i in sorted(data_points.keys()):
-        print(i)
-        print(x_labels)
-        if i in x_labels:
-            print(i, [j for j in data_points[i] if j != 0])
-            graph.add(i, [j for j in data_points[i] if j != 0])
+        print(i, [j for j in data_points[i] if j != 0])
+        graph.add(i, [j for j in data_points[i] if j != 0])
 
-    return graph.render()
-
-
-
-
-@app.route('/accountsboxplot.svg')
-def renderAccountsBoxPlot():
-    """
-    Desc: Endpoint for account listing line graph on the home page
-
-    Args:
-        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
-                                arguments
-    """
-    days       = getTimeframe(request.args.get('days'))
-    days_delta = 1
-    
-    # Only display one data point per week for timeframes above a month
-    if days > 31:
-        days_delta = 7
-
-    # Render the line graph
-    line_graph = pygal.Box(range=[0, 100])
- 
-    if days == 7:
-        line_graph.title = 'Account Efficiency for the Week'
-    elif days == 31:
-        line_graph.title = 'Account Efficiency for the Month'
-    elif days == 100:
-        line_graph.title = 'Account Efficiency for the Quarter'
-    else:
-        line_graph.title = 'Account Efficiency'
-
-    #line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
-    accounts            = {}
-
-    # Get the top ten accounts
-    for i in db.getTopAccounts(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
-        accounts[i[0]] = []
-
-    # Get the daily stats for the top ten accounts
-    for i in range(days, 0, days_delta * -1):
-        d = date.today() - timedelta(i)
-        
-        accountStatsOnDate = db.getFullAccountList(d)
-       
-        for i in accounts:
-            try:
-                stats = accountStatsOnDate[i]
-                accounts[i].append(normalize(stats['total']))
-
-            except:
-                accounts[i].append(0.0) 
-
-    # Add each account in alphabetical order
-    for i in sorted(accounts.keys()):
-        print(i, [j for j in accounts[i] if j != 0])
-        line_graph.add(i, [j for j in accounts[i] if j != 0])
-
-    return line_graph.render_response()
-
-
-@app.route('/clusterlinegraph.svg')
-def renderClusterLineGraph():
-    """
-    Desc: Endpoint for cluster line graph on the home page
-
-    Args:
-        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
-                                arguments
-    """   
-    days       = getTimeframe(request.args.get('days'))
-    days_delta = 1
-   
-    if days > 31:
-        days_delta = 7
-
-    line_graph = pygal.Line(x_label_rotation=30, range=[0, 100])
-
-    if days == 7:
-        line_graph.title = 'Cluster Efficiency for the Week'
-    elif days == 31:
-        line_graph.title = 'Cluster Efficiency for the Month'
-    elif days == 100:
-        line_graph.title = 'Cluster Efficiency for the Quarter'
-    else:
-        line_graph.title = 'Cluster Efficiency'
-
-    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
-    stats               = db.getClusterStats(date.today() - timedelta(days))
-   
-    cores  = []
-    memory = []
-    tLimit = []
-    total  = []
-
-    dates = stats.keys()
-    for i in line_graph.x_labels:
-        stat = {'cores': None, 'memory': None, 'tlimit': None, 'total': None}
-        if i in dates:
-            stat = stats[i]
-            for j in stat:
-                if stat[j] == 0.0:
-                    stat[j] = None
-
-        cores.append(stat['cores'])
-        memory.append(stat['memory'])
-        tLimit.append(stat['tlimit'])
-        total.append(stat['total'])
-   
-        if total[-1]:
-            total[-1] = normalize(total[-1])
-
-    line_graph.add('cores', cores)
-    line_graph.add('memory', memory)
-    line_graph.add('time limit', tLimit)
-    line_graph.add('total efficiency', total)
-
-    return line_graph.render_response()
+    return graph.render_response()
 
 
 @app.route('/')
