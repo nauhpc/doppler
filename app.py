@@ -278,11 +278,15 @@ def renderAccountsLineGraph():
 
 def renderGraph(graph_function, data_set):
     """
-    Desc: Endpoint for account listing line graph on the home page
+    Desc: Render pygal SVG graphs for various data sets and timelines
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
+        graph_function (func): Pygal function for generating the graph (box and
+                               line currently officially supported)
+        data_set (string): string representation of what data set to pull from
+                           (supports 'cluster', 'user', and 'account')
     """
     days       = getTimeframe(request.args.get('days'))
     days_delta = 1
