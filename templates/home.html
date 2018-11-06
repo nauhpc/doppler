@@ -16,13 +16,14 @@
     </div>
     <div class="col-md-6 border">
         {% if view == 'users' %}
-        <embed src={{url_for('renderUsersBarGraph', days=time)}}>   
+        <embed src={{url_for('renderUsersBoxPlot', days=time)}}>   
         {% else %}
-        <embed src={{url_for('renderAccountsBarGraph', days=time)}}>   
+        <embed src={{url_for('renderAccountsBoxPlot', days=time)}}>   
         {% endif %}
     </div>
 </div>
-    
+
+
 <!-- account ranks  -->
 <div class="row">    
     <div class="col-md-12">
