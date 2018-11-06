@@ -343,7 +343,7 @@ def renderAccountLineGraph(account_name):
     data = db.getAccountStats(account_name, since=(date.today() - timedelta(days)))
 
     # Render the line graph
-    line_graph = pygal.Line(x_label_rotation=20, range=[0, 100])
+    line_graph = pygal.Line(x_label_rotation=20, range=[0, 100], show_x_labels=False)
     line_graph.title = account_name + ' Efficiency over Time'
     line_graph.x_labels = sorted(data.keys())
 
@@ -468,7 +468,7 @@ def renderUserAccountLineGraph(user_name, account=None):
                            as_list=True)
 
     # Render the line graph
-    line_graph = pygal.Line(x_label_rotation=20, range=[0, 100])
+    line_graph = pygal.Line(x_label_rotation=20, range=[0, 100], show_x_labels=False)
     line_graph.title = user_name + ' ' + account + ' Efficiency over Time'
     line_graph.x_labels = sorted([i[2] for i in data])
     
