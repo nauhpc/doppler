@@ -104,30 +104,7 @@ def renderAccountsBarGraph():
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    days = getTimeframe(request.args.get('days'))
-
-    accounts = db.getTopAccounts(since=date.today()-timedelta(days), normalize=normalize)[:10]
-
-    # Render pie graph
-    bar_graph = pygal.Bar(range=[0, 100])
-    
-    if days == 7:
-        bar_graph.title = 'Account Efficiency for the Week'
-    elif days == 31:
-        bar_graph.title = 'Account Efficiency for the Month'
-    elif days == 100:
-        bar_graph.title = 'Account Efficiency for the Quarter'
-    else:
-        bar_graph.title = 'Account Efficiency'
-    
-    for i in sorted(accounts, key=lambda account: account[0]):
-        print(i)
-        bar_graph.add(i[0], [{
-            "value": normalize(i[1]),
-            "xlink": url_for("viewAccount", account_name=i[0])
-        }])
-
-    return bar_graph.render_response()
+    return renderGraph(pygal.Bar, 'account')
 
 
 @app.route('/usersbargraph.svg')
@@ -139,29 +116,7 @@ def renderUsersBarGraph():
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    days = getTimeframe(request.args.get('days'))
-
-    users = db.getTopUsers(since=date.today()-timedelta(days), normalize=normalize)[:10]
-
-    # Render pie graph
-    bar_graph = pygal.Bar(range=[0, 100])
-    
-    if days == 7:
-        bar_graph.title = 'User Efficiency for the Week'
-    elif days == 31:
-        bar_graph.title = 'User Efficiency for the Month'
-    elif days == 100:
-        bar_graph.title = 'User Efficiency for the Quarter'
-    else:
-        bar_graph.title = 'User Efficiency'
-    
-    for i in sorted(users, key=lambda user: user[0]):
-        bar_graph.add(i[0], [{
-            "value": normalize(i[1]),
-            "xlink": url_for("viewUser", user_name=i[0])
-        }])
-
-    return bar_graph.render_response()
+    return renderGraph(pygal.Bar, 'user')
 
 
 @app.route('/userslinegraph.svg')
@@ -173,51 +128,7 @@ def renderUsersLineGraph():
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    days       = getTimeframe(request.args.get('days'))
-    days_delta = 1
-    
-    # Only display one data point per week for timeframes above a month
-    if days > 31:
-        days_delta = 7
-
-    # Render the line graph
-    line_graph       = pygal.Line(x_label_rotation=30, range=[0, 100])
- 
-    if days == 7:
-        line_graph.title = 'User Efficiency for the Week'
-    elif days == 31:
-        line_graph.title = 'User Efficiency for the Month'
-    elif days == 100:
-        line_graph.title = 'User Efficiency for the Quarter'
-    else:
-        line_graph.title = 'User Efficiency'
-    
-    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
-    users               = {}
-
-    # Get the top ten users
-    for i in db.getTopUsers(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
-        users[i[0]] = []
-
-    # Get the daily stats for top ten users
-    for i in range(days, 0, days_delta * -1):
-        d = date.today() - timedelta(i)
-        
-        userStatsOnDate = db.getFullAccountList(d, users=True)
-       
-        for i in users:
-            try:
-                stats = userStatsOnDate[i]
-                users[i].append(normalize(stats['total']))
-
-            except:
-                users[i].append(0.0) 
-
-    # Add each user in alphabetical order
-    for i in sorted(users.keys()):
-        line_graph.add(i, [None if j == 0 else j for j in users[i]])
-
-    return line_graph.render_response()
+    return renderGraph(pygal.Line, 'user')
 
 
 @app.route('/accountslinegraph.svg')
@@ -229,51 +140,7 @@ def renderAccountsLineGraph():
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    days       = getTimeframe(request.args.get('days'))
-    days_delta = 1
-    
-    # Only display one data point per week for timeframes above a month
-    if days > 31:
-        days_delta = 7
-
-    # Render the line graph
-    line_graph = pygal.Line(x_label_rotation=30, range=[0, 100])
- 
-    if days == 7:
-        line_graph.title = 'Account Efficiency for the Week'
-    elif days == 31:
-        line_graph.title = 'Account Efficiency for the Month'
-    elif days == 100:
-        line_graph.title = 'Account Efficiency for the Quarter'
-    else:
-        line_graph.title = 'Account Efficiency'
-
-    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
-    accounts            = {}
-
-    # Get the top ten accounts
-    for i in db.getTopAccounts(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
-        accounts[i[0]] = []
-
-    # Get the daily stats for the top ten accounts
-    for i in range(days, 0, days_delta * -1):
-        d = date.today() - timedelta(i)
-        
-        accountStatsOnDate = db.getFullAccountList(d)
-       
-        for i in accounts:
-            try:
-                stats = accountStatsOnDate[i]
-                accounts[i].append(normalize(stats['total']))
-
-            except:
-                accounts[i].append(0.0) 
-
-    # Add each account in alphabetical order
-    for i in sorted(accounts.keys()):
-        line_graph.add(i, [None if j == 0 else j for j in accounts[i]])
-
-    return line_graph.render_response()
+    renderGraph(pygal.Line, 'account')
 
 
 def renderGraph(graph_function, data_set):
@@ -350,7 +217,7 @@ def renderGraph(graph_function, data_set):
         graph.add('time limit', tLimit)
         graph.add('total efficiency', total)
 
-        return graph.render(disable_xml_declaration=True)
+        return graph.render()
 
 
     # Get the daily stats for the top ten users/accounts
@@ -372,8 +239,11 @@ def renderGraph(graph_function, data_set):
 
     # Add each account in alphabetical order
     for i in sorted(data_points.keys()):
-        print(i, [j for j in data_points[i] if j != 0])
-        graph.add(i, [j for j in data_points[i] if j != 0])
+        print(i)
+        print(x_labels)
+        if i in x_labels:
+            print(i, [j for j in data_points[i] if j != 0])
+            graph.add(i, [j for j in data_points[i] if j != 0])
 
     return graph.render()
 
