@@ -95,72 +95,28 @@ def getTimeframe(days):
     return days
 
 
-@app.route('/accountsbargraph.svg')
-def renderAccountsBarGraph():
+@app.route('/accountsboxplot.svg')
+def renderAccountsBoxPlot():
     """
-    Desc: Endpoint for the account lising bar graph on the home page
+    Desc: Endpoint for the account lising box plot on the home page
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    days = getTimeframe(request.args.get('days'))
-
-    accounts = db.getTopAccounts(since=date.today()-timedelta(days), normalize=normalize)[:10]
-
-    # Render pie graph
-    bar_graph = pygal.Bar(range=[0, 100])
-    
-    if days == 7:
-        bar_graph.title = 'Account Efficiency for the Week'
-    elif days == 31:
-        bar_graph.title = 'Account Efficiency for the Month'
-    elif days == 100:
-        bar_graph.title = 'Account Efficiency for the Quarter'
-    else:
-        bar_graph.title = 'Account Efficiency'
-    
-    for i in sorted(accounts, key=lambda account: account[0]):
-        bar_graph.add(i[0], [{
-            "value": normalize(i[1]),
-            "xlink": url_for("viewAccount", account_name=i[0])
-        }])
-
-    return bar_graph.render_response()
+    return renderGraph(pygal.Box, 'Account')
 
 
-@app.route('/usersbargraph.svg')
-def renderUsersBarGraph():
+@app.route('/usersboxplot.svg')
+def renderUsersBoxPlot():
     """
-    Desc: Endpoint for the user listing bar graph on the home page
+    Desc: Endpoint for the user listing box plot on the home page
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    days = getTimeframe(request.args.get('days'))
-
-    users = db.getTopUsers(since=date.today()-timedelta(days), normalize=normalize)[:10]
-
-    # Render pie graph
-    bar_graph = pygal.Bar(range=[0, 100])
-    
-    if days == 7:
-        bar_graph.title = 'User Efficiency for the Week'
-    elif days == 31:
-        bar_graph.title = 'User Efficiency for the Month'
-    elif days == 100:
-        bar_graph.title = 'User Efficiency for the Quarter'
-    else:
-        bar_graph.title = 'User Efficiency'
-    
-    for i in sorted(users, key=lambda user: user[0]):
-        bar_graph.add(i[0], [{
-            "value": normalize(i[1]),
-            "xlink": url_for("viewUser", user_name=i[0])
-        }])
-
-    return bar_graph.render_response()
+    return renderGraph(pygal.Box, 'User')
 
 
 @app.route('/userslinegraph.svg')
@@ -172,51 +128,7 @@ def renderUsersLineGraph():
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    days       = getTimeframe(request.args.get('days'))
-    days_delta = 1
-    
-    # Only display one data point per week for timeframes above a month
-    if days > 31:
-        days_delta = 7
-
-    # Render the line graph
-    line_graph       = pygal.Line(x_label_rotation=30, range=[0, 100])
- 
-    if days == 7:
-        line_graph.title = 'User Efficiency for the Week'
-    elif days == 31:
-        line_graph.title = 'User Efficiency for the Month'
-    elif days == 100:
-        line_graph.title = 'User Efficiency for the Quarter'
-    else:
-        line_graph.title = 'User Efficiency'
-    
-    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
-    users               = {}
-
-    # Get the top ten users
-    for i in db.getTopUsers(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
-        users[i[0]] = []
-
-    # Get the daily stats for top ten users
-    for i in range(days, 0, days_delta * -1):
-        d = date.today() - timedelta(i)
-        
-        userStatsOnDate = db.getFullAccountList(d, users=True)
-       
-        for i in users:
-            try:
-                stats = userStatsOnDate[i]
-                users[i].append(normalize(stats['total']))
-
-            except:
-                users[i].append(0.0) 
-
-    # Add each user in alphabetical order
-    for i in sorted(users.keys()):
-        line_graph.add(i, [None if j == 0 else j for j in users[i]])
-
-    return line_graph.render_response()
+    return renderGraph(pygal.Line, 'User')
 
 
 @app.route('/accountslinegraph.svg')
@@ -228,51 +140,7 @@ def renderAccountsLineGraph():
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    days       = getTimeframe(request.args.get('days'))
-    days_delta = 1
-    
-    # Only display one data point per week for timeframes above a month
-    if days > 31:
-        days_delta = 7
-
-    # Render the line graph
-    line_graph = pygal.Line(x_label_rotation=30, range=[0, 100])
- 
-    if days == 7:
-        line_graph.title = 'Account Efficiency for the Week'
-    elif days == 31:
-        line_graph.title = 'Account Efficiency for the Month'
-    elif days == 100:
-        line_graph.title = 'Account Efficiency for the Quarter'
-    else:
-        line_graph.title = 'Account Efficiency'
-
-    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
-    accounts            = {}
-
-    # Get the top ten accounts
-    for i in db.getTopAccounts(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
-        accounts[i[0]] = []
-
-    # Get the daily stats for the top ten accounts
-    for i in range(days, 0, days_delta * -1):
-        d = date.today() - timedelta(i)
-        
-        accountStatsOnDate = db.getFullAccountList(d)
-       
-        for i in accounts:
-            try:
-                stats = accountStatsOnDate[i]
-                accounts[i].append(normalize(stats['total']))
-
-            except:
-                accounts[i].append(0.0) 
-
-    # Add each account in alphabetical order
-    for i in sorted(accounts.keys()):
-        line_graph.add(i, [None if j == 0 else j for j in accounts[i]])
-
-    return line_graph.render_response()
+    return renderGraph(pygal.Line, 'Account')
 
 
 @app.route('/clusterlinegraph.svg')
@@ -283,55 +151,110 @@ def renderClusterLineGraph():
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
-    """   
+    """
+    return renderGraph(pygal.Line, 'cluster')
+
+
+def renderGraph(graph_function, data_set):
+    """
+    Desc: Render pygal SVG graphs for various data sets and timelines
+
+    Args:
+        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
+                                arguments
+        graph_function (func): Pygal function for generating the graph (box and
+                               line currently officially supported)
+        data_set (string): string representation of what data set to pull from
+                           (supports 'cluster', 'user', and 'account')
+    """
     days       = getTimeframe(request.args.get('days'))
     days_delta = 1
-   
+    
+    # Only display one data point per week for timeframes above a month
     if days > 31:
         days_delta = 7
 
-    line_graph = pygal.Line(x_label_rotation=30, range=[0, 100])
-
+    # Render the line graph
+    graph = graph_function(range=[0, 100], show_x_labels=False)
+ 
     if days == 7:
-        line_graph.title = 'Cluster Efficiency for the Week'
+        graph.title = data_set + ' Efficiency for the Week'
     elif days == 31:
-        line_graph.title = 'Cluster Efficiency for the Month'
+        graph.title = data_set + ' Efficiency for the Month'
     elif days == 100:
-        line_graph.title = 'Cluster Efficiency for the Quarter'
+        graph.title = data_set + ' Efficiency for the Quarter'
     else:
-        line_graph.title = 'Cluster Efficiency'
+        graph.title = data_set + ' Efficiency'
 
-    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
-    stats               = db.getClusterStats(date.today() - timedelta(days))
-   
-    cores  = []
-    memory = []
-    tLimit = []
-    total  = []
+    graph.x_labels    = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
+    data_points       = {}
 
-    dates = stats.keys()
-    for i in line_graph.x_labels:
-        stat = {'cores': None, 'memory': None, 'tlimit': None, 'total': None}
-        if i in dates:
-            stat = stats[i]
-            for j in stat:
-                if stat[j] == 0.0:
-                    stat[j] = None
+    if data_set.lower() == 'account':
+        # Get the top ten accounts
+        for i in db.getTopAccounts(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
+            data_points[i[0]] = []
 
-        cores.append(stat['cores'])
-        memory.append(stat['memory'])
-        tLimit.append(stat['tlimit'])
-        total.append(stat['total'])
-   
-        if total[-1]:
-            total[-1] = normalize(total[-1])
+    elif data_set.lower() == 'user':
+        # Get the top ten users
+        for i in db.getTopUsers(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
+            data_points[i[0]] = []
 
-    line_graph.add('cores', cores)
-    line_graph.add('memory', memory)
-    line_graph.add('time limit', tLimit)
-    line_graph.add('total efficiency', total)
+    elif data_set.lower() == 'cluster':
+        data_points = db.getClusterStats(date.today() - timedelta(days))
+       
+        cores  = []
+        memory = []
+        tLimit = []
+        total  = []
 
-    return line_graph.render_response()
+        dates = data_points.keys()
+        for i in graph.x_labels:
+            stat = {'cores': None, 'memory': None, 'tlimit': None, 'total': None}
+            if i in dates:
+                stat = data_points[i]
+                for j in stat:
+                    if stat[j] == 0.0:
+                        stat[j] = None
+
+            cores.append(stat['cores'])
+            memory.append(stat['memory'])
+            tLimit.append(stat['tlimit'])
+            total.append(stat['total'])
+       
+            if total[-1]:
+                total[-1] = normalize(total[-1])
+
+        graph.add('cores', cores)
+        graph.add('memory', memory)
+        graph.add('time limit', tLimit)
+        graph.add('total efficiency', total)
+
+        return graph.render_response()
+
+
+    # Get the daily stats for the top ten users/accounts
+    for i in range(days, 0, days_delta * -1):
+        d = date.today() - timedelta(i)
+        
+        statsOnDate = db.getFullAccountList(d, users=(data_set.lower() == 'user'))
+       
+        for i in statsOnDate:
+            try:
+                stats = statsOnDate[i]
+                data_points[i].append(normalize(stats['total']))
+
+            except KeyError:
+                continue
+
+            except:
+                data_points[i].append(0.0) 
+
+    # Add each account in alphabetical order
+    for i in sorted(data_points.keys()):
+        print(i, [j for j in data_points[i] if j != 0])
+        graph.add(i, [j for j in data_points[i] if j != 0])
+
+    return graph.render_response()
 
 
 @app.route('/')
@@ -402,7 +325,7 @@ def home():
         account_ranks.append([len(account_ranks)+1, accName, cores,
                               memory, t_limit, total, job_sum])
 
-    return render_template('home.html', account_ranks=account_ranks, view=view, time=timeframe)
+    return render_template('home.html', graph=renderGraph, box=pygal.Box, line=pygal.Line, account_ranks=account_ranks, view=view, time=timeframe)
 
 
 @app.route('/account/<account_name>/linegraph.svg')
@@ -420,7 +343,7 @@ def renderAccountLineGraph(account_name):
     data = db.getAccountStats(account_name, since=(date.today() - timedelta(days)))
 
     # Render the line graph
-    line_graph = pygal.Line(x_label_rotation=20, range=[0, 100])
+    line_graph = pygal.Line(x_label_rotation=20, range=[0, 100], show_x_labels=False)
     line_graph.title = account_name + ' Efficiency over Time'
     line_graph.x_labels = sorted(data.keys())
 
@@ -545,7 +468,7 @@ def renderUserAccountLineGraph(user_name, account=None):
                            as_list=True)
 
     # Render the line graph
-    line_graph = pygal.Line(x_label_rotation=20, range=[0, 100])
+    line_graph = pygal.Line(x_label_rotation=20, range=[0, 100], show_x_labels=False)
     line_graph.title = user_name + ' ' + account + ' Efficiency over Time'
     line_graph.x_labels = sorted([i[2] for i in data])
     
