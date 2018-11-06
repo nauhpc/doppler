@@ -121,6 +121,7 @@ def renderAccountsBarGraph():
         bar_graph.title = 'Account Efficiency'
     
     for i in sorted(accounts, key=lambda account: account[0]):
+        print(i)
         bar_graph.add(i[0], [{
             "value": normalize(i[1]),
             "xlink": url_for("viewAccount", account_name=i[0])
@@ -275,6 +276,163 @@ def renderAccountsLineGraph():
     return line_graph.render_response()
 
 
+def renderGraph(graph_function, data_set):
+    """
+    Desc: Endpoint for account listing line graph on the home page
+
+    Args:
+        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
+                                arguments
+    """
+    days       = getTimeframe(request.args.get('days'))
+    days_delta = 1
+    
+    # Only display one data point per week for timeframes above a month
+    if days > 31:
+        days_delta = 7
+
+    # Render the line graph
+    graph = graph_function(range=[0, 100])
+ 
+    if days == 7:
+        graph.title = data_set + ' Efficiency for the Week'
+    elif days == 31:
+        graph.title = data_set + ' Efficiency for the Month'
+    elif days == 100:
+        graph.title = data_set + ' Efficiency for the Quarter'
+    else:
+        graph.title = data_set + ' Efficiency'
+
+    x_labels    = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
+    data_points = {}
+
+    if data_set.lower() == 'account':
+        # Get the top ten accounts
+        for i in db.getTopAccounts(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
+            data_points[i[0]] = []
+
+    elif data_set.lower() == 'user':
+        # Get the top ten users
+        for i in db.getTopUsers(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
+            data_points[i[0]] = []
+
+    elif data_set.lower() == 'cluster':
+        data_points = db.getClusterStats(date.today() - timedelta(days))
+       
+        cores  = []
+        memory = []
+        tLimit = []
+        total  = []
+
+        dates = data_points.keys()
+        for i in x_labels:
+            stat = {'cores': None, 'memory': None, 'tlimit': None, 'total': None}
+            if i in dates:
+                stat = data_points[i]
+                for j in stat:
+                    if stat[j] == 0.0:
+                        stat[j] = None
+
+            cores.append(stat['cores'])
+            memory.append(stat['memory'])
+            tLimit.append(stat['tlimit'])
+            total.append(stat['total'])
+       
+            if total[-1]:
+                total[-1] = normalize(total[-1])
+
+        graph.add('cores', cores)
+        graph.add('memory', memory)
+        graph.add('time limit', tLimit)
+        graph.add('total efficiency', total)
+
+        return graph.render(disable_xml_declaration=True)
+
+
+    # Get the daily stats for the top ten users/accounts
+    for i in range(days, 0, days_delta * -1):
+        d = date.today() - timedelta(i)
+        
+        statsOnDate = db.getFullAccountList(d, users=(data_set.lower() == 'user'))
+       
+        for i in statsOnDate:
+            try:
+                stats = statsOnDate[i]
+                data_points[i].append(normalize(stats['total']))
+
+            except KeyError:
+                continue
+
+            except:
+                data_points[i].append(0.0) 
+
+    # Add each account in alphabetical order
+    for i in sorted(data_points.keys()):
+        print(i, [j for j in data_points[i] if j != 0])
+        graph.add(i, [j for j in data_points[i] if j != 0])
+
+    return graph.render()
+
+
+
+
+@app.route('/accountsboxplot.svg')
+def renderAccountsBoxPlot():
+    """
+    Desc: Endpoint for account listing line graph on the home page
+
+    Args:
+        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
+                                arguments
+    """
+    days       = getTimeframe(request.args.get('days'))
+    days_delta = 1
+    
+    # Only display one data point per week for timeframes above a month
+    if days > 31:
+        days_delta = 7
+
+    # Render the line graph
+    line_graph = pygal.Box(range=[0, 100])
+ 
+    if days == 7:
+        line_graph.title = 'Account Efficiency for the Week'
+    elif days == 31:
+        line_graph.title = 'Account Efficiency for the Month'
+    elif days == 100:
+        line_graph.title = 'Account Efficiency for the Quarter'
+    else:
+        line_graph.title = 'Account Efficiency'
+
+    #line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
+    accounts            = {}
+
+    # Get the top ten accounts
+    for i in db.getTopAccounts(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
+        accounts[i[0]] = []
+
+    # Get the daily stats for the top ten accounts
+    for i in range(days, 0, days_delta * -1):
+        d = date.today() - timedelta(i)
+        
+        accountStatsOnDate = db.getFullAccountList(d)
+       
+        for i in accounts:
+            try:
+                stats = accountStatsOnDate[i]
+                accounts[i].append(normalize(stats['total']))
+
+            except:
+                accounts[i].append(0.0) 
+
+    # Add each account in alphabetical order
+    for i in sorted(accounts.keys()):
+        print(i, [j for j in accounts[i] if j != 0])
+        line_graph.add(i, [j for j in accounts[i] if j != 0])
+
+    return line_graph.render_response()
+
+
 @app.route('/clusterlinegraph.svg')
 def renderClusterLineGraph():
     """
@@ -402,7 +560,7 @@ def home():
         account_ranks.append([len(account_ranks)+1, accName, cores,
                               memory, t_limit, total, job_sum])
 
-    return render_template('home.html', account_ranks=account_ranks, view=view, time=timeframe)
+    return render_template('home.html', graph=renderGraph, box=pygal.Box, line=pygal.Line, account_ranks=account_ranks, view=view, time=timeframe)
 
 
 @app.route('/account/<account_name>/linegraph.svg')
