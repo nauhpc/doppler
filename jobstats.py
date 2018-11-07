@@ -8,6 +8,7 @@ Authors:
 """
 
 import datetime
+import statistics
 from functools import reduce
 
 import mysql.connector.pooling as mysql
@@ -219,16 +220,13 @@ class Jobstats:
                 oldJobSum = accounts[account]['jobsum']
 
                 if oldCores and cores:
-                    cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
-                            (oldJobSum + jobSum)
+                    statistics.mean([oldCores, cores])
 
                 if oldMemory and memory:
-                    memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
-                             (oldJobSum + jobSum)
+                    statistics.mean([oldMemory, memory])
 
                 if oldTLimit and tLimit:
-                    tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
-                             (oldJobSum + jobSum)
+                    statistics.mean([oldTLimit, tLimit])
 
                 jobSum += oldJobSum
 
@@ -245,7 +243,8 @@ class Jobstats:
         if not since:
             since = self.last_week
 
-        stats  = {}
+        stats        = {}
+        statsAverage = {}
         query  = ("SELECT * FROM jobs WHERE date >= %s")
 
         conn   = self.cnx_pool.get_connection()
@@ -261,46 +260,62 @@ class Jobstats:
             total  = i[6]
             jobSum = i[7]
 
+            if date not in stats:
+                stats[date] = {}
+                stats[date]['cores'] = []
+                stats[date]['memory'] = []
+                stats[date]['tlimit'] = []
+                stats[date]['jobsum'] = []
+                stats[date]['total'] = []
 
             if date in stats.keys():
-                oldCores  = stats[date]['cores']
-                oldMemory = stats[date]['memory']
-                oldTLimit = stats[date]['tlimit']
-                oldJobSum = stats[date]['jobsum']
+                if cores:
+                    stats[date]['cores'].append(cores)
+                
+                if memory:
+                    stats[date]['memory'].append(memory)
+                
+                if tLimit:
+                    stats[date]['tlimit'].append(tLimit)
+                
+                if jobSum:
+                    stats[date]['jobsum'].append(jobSum)
 
-                if oldCores:
-                    if cores:
-                        cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
-                                (oldJobSum + jobSum)
+                if total:
+                    stats[date]['total'].append(total)
 
-                    else:
-                        cores = oldCores
 
-                if oldMemory:
-                    if memory:
-                        memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
-                                 (oldJobSum + jobSum)
+        for i in stats.keys():
+            cores  = None
+            memory = None
+            tLimit = None
+            total  = None
+            jobSum = None
 
-                    else:
-                        memory = oldMemory
 
-                if oldTLimit:
-                    if tLimit:
-                        tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
-                                 (oldJobSum + jobSum)
+            if len(stats[i]['cores']) >= 1:
+                cores = statistics.mean(stats[i]['cores'])
 
-                    else:
-                        tLimit = oldTLimit
+            if len(stats[i]['memory']) >= 1:
+                memory = statistics.mean(stats[i]['memory'])
 
-                jobSum += oldJobSum
+            if len(stats[i]['tlimit']) >= 1:
+                tLimit = statistics.mean(stats[i]['tlimit']) 
 
-            stats[date] = {'cores': cores, 'memory': memory,
-                           'tlimit': tLimit, 'total': total,
-                           'jobsum': jobSum}
+            if len(stats[i]['total']) >= 1:
+                total = statistics.mean(stats[i]['total'])
+
+            jobSum = sum(stats[i]['jobsum'])
+
+            statsAverage[i] = {'cores': cores, 
+                                  'memory': memory,
+                                  'tlimit': tLimit,
+                                  'total': total,
+                                  'jobsum': jobSum}
 
         conn.close()
-
-        return stats
+        
+        return statsAverage
 
 
     def getAccountStats(self, account, since=None):
@@ -331,24 +346,21 @@ class Jobstats:
 
                 if oldCores:
                     if cores:
-                        cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
-                                (oldJobSum + jobSum)
+                        cores = statistics.mean([oldCores, cores]) 
 
                     else:
                         cores = oldCores
 
                 if oldMemory:
                     if memory:
-                        memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
-                                 (oldJobSum + jobSum)
+                        memory = statistics.mean([oldMemory, memory])
 
                     else:
                         memory = oldMemory
 
                 if oldTLimit:
                     if tLimit:
-                        tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
-                                 (oldJobSum + jobSum)
+                        tLimit = statistics.mean([oldTLimit, tLimit])
 
                     else:
                         tLimit = oldTLimit
@@ -381,24 +393,21 @@ class Jobstats:
 
             if oldCores:
                 if cores:
-                    cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
-                            (oldJobSum + jobSum)
+                    cores = statistics.mean([oldCores, cores]) 
 
                 else:
                     cores = oldCores
 
             if oldMemory:
                 if memory:
-                    memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
-                             (oldJobSum + jobSum)
+                    memory = statistics.mean([oldMemory, memory])
 
                 else:
                     memory = oldMemory
 
             if oldTLimit:
                 if tLimit:
-                    tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
-                             (oldJobSum + jobSum)
+                    tLimit = statistics.mean([oldTLimit, tLimit])
 
                 else:
                     tLimit = oldTLimit
