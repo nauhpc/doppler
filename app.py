@@ -171,7 +171,7 @@ def renderGraph(graph_function, data_set):
     days_delta = 1
     
     # Only display one data point per week for timeframes above a month
-    if days > 31:
+    if data_set.lower() in ['user', 'account'] and days > 31:
         days_delta = 7
 
     # Render the line graph
@@ -251,7 +251,6 @@ def renderGraph(graph_function, data_set):
 
     # Add each account in alphabetical order
     for i in sorted(data_points.keys()):
-        print(i, [j for j in data_points[i] if j != 0])
         graph.add(i, [j for j in data_points[i] if j != 0])
 
     return graph.render_response()
