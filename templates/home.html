@@ -51,7 +51,7 @@
                     {% endif %}
                 </h5>
                 <table class="table table-hover table-striped">
-                    <tr> <th>rank</th> <th>account</th><th>cores</th><th>memory</th><th>time limit</th>  <th>total efficiency</th> <th>Jobs</th></tr>
+                    <tr> <th>rank</th> <th>account</th> <th>cores</th> <th>memory</th> <th>time limit</th> <th>jobs</th> <th>total efficiency</th> </tr>
                     {% for i in account_ranks %}
                     <tr>
                         <th scope="row">{{i[0]}}</th>
@@ -63,8 +63,8 @@
                         <td>{{i[2]|round(2) if i[2] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
                         <td>{{i[3]|round(2) if i[3] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
                         <td>{{i[4]|round(2) if i[4] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td>
-                        <th scope="row">{{i[5]|round(2) if i[5] != '-' else i[5]}}</th> 
                         <td>{{i[6] if i[6] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td>
+                        <th scope="row">{{i[5]|round(2) if i[5] != '-' else i[5]}}</th> 
                     </tr>
                     {% endfor %}
                     </table>

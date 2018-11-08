@@ -5,7 +5,19 @@
 
 <div class="row">
     <div class="col-md-12">
-        <h4 align="center" class="display-5"> stats for user {{user_name}}</h4>
+        <h4 align="center" class="display-5"> 
+            {% if not view and not time %}
+            Weekly Stats for {{user_name}}
+            {% else %}
+                {% if time == 'W' %}
+                Weekly Stats for {{user_name}} 
+                {% elif time == 'M' %}
+                Monthly Stats for {{user_name}}
+                {% else %}
+                Quarterly Stats for {{user_name}}
+                {% endif %}
+            {% endif %}
+        </h4>
     </div>
 </div>
 

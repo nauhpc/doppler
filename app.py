@@ -343,7 +343,16 @@ def renderAccountLineGraph(account_name):
 
     # Render the line graph
     line_graph = pygal.Line(x_label_rotation=20, range=[0, 100], show_x_labels=False)
-    line_graph.title = account_name + ' Efficiency over Time'
+
+    if days == 7:
+        line_graph.title = account_name + ' Efficiency for the Week'
+    elif days == 31:
+        line_graph.title = account_name + ' Efficiency for the Month'
+    elif days == 100:
+        line_graph.title = account_name + ' Efficiency for the Quarter'
+    else:
+        line_graph.title = account_name + ' Efficiency'
+
     line_graph.x_labels = sorted(data.keys())
 
     cores  = [data[i]['cores']  for i in data]
@@ -468,7 +477,17 @@ def renderUserAccountLineGraph(user_name, account=None):
 
     # Render the line graph
     line_graph = pygal.Line(x_label_rotation=20, range=[0, 100], show_x_labels=False)
-    line_graph.title = user_name + ' ' + account + ' Efficiency over Time'
+    
+    if days == 7:
+        line_graph.title = user_name + ' Efficiency for the Week'
+    elif days == 31:
+        line_graph.title = user_name + ' Efficiency for the Month'
+    elif days == 100:
+        line_graph.title = user_name + ' Efficiency for the Quarter'
+    else:
+        line_graph.title = user_name + ' Efficiency'
+
+
     line_graph.x_labels = sorted([i[2] for i in data])
     
     cores   = []
