@@ -26,7 +26,7 @@
                     {% else %}
                     <li class="nav-item">
                     {% endif %}
-                        <a class="nav-link" style="{{'color: white !important;' if view == 'cluster'}}" href="{{url_for('home', view='cluster', time=time)}}">Cluster</a>
+                        <a class="nav-link" style="{{'color: #fdc131 !important;' if view == 'cluster'}}" href="{{url_for('home', view='cluster', time=time)}}">Cluster</a>
 			        </li>
 
                     {% if view == 'accounts' or not view %}
@@ -34,7 +34,7 @@
                     {% else %}
                     <li class="nav-item">
                     {% endif %}
-                    <a class="nav-link" style="{{'color: white !important;' if view == 'accounts' or (not user_name and not view)}}" href="{{url_for('home', view='accounts', time=time)}}">Accounts</a>
+                    <a class="nav-link" style="{{'color: #fdc131 !important;' if view == 'accounts' or (not user_name and not view)}}" href="{{url_for('home', view='accounts', time=time)}}">Accounts</a>
 			        </li>
 
                     {% if view == 'users' %}
@@ -42,7 +42,7 @@
                     {% else %}
                     <li class="nav-item">
                     {% endif %}
-                    <a class="nav-link" style="{{'color: white !important;' if view == 'users' or (user_name and not view)}}" href="{{url_for('home', view='users', time=time)}}">Users</a>
+                    <a class="nav-link" style="{{'color: #fdc131 !important;' if view == 'users' or (user_name and not view)}}" href="{{url_for('home', view='users', time=time)}}">Users</a>
 			        </li>
 			        			        		        
                     <li class="nav-item dropdown">
