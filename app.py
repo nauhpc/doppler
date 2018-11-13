@@ -231,23 +231,30 @@ def renderGraph(graph_function, data_set):
 
         return graph.render_response()
 
-
+    
     # Get the daily stats for the top ten users/accounts
     for i in range(days, 0, days_delta * -1):
+        filled_accs = []
         d = date.today() - timedelta(i)
         
         statsOnDate = db.getFullAccountList(d, users=(data_set.lower() == 'user'))
-       
-        for i in statsOnDate:
+      
+        for j in statsOnDate:
+
             try:
-                stats = statsOnDate[i]
-                data_points[i].append(normalize(stats['total']))
+                stats = statsOnDate[j]
+                data_points[j].append(normalize(stats['total']))
+                filled_accs.append(j)
 
             except KeyError:
                 continue
 
             except:
                 data_points[i].append(0.0) 
+
+        for acc in data_points:
+            if acc not in filled_accs:
+                data_points[acc].append(None)
 
     # Add each account in alphabetical order
     for i in sorted(data_points.keys()):
