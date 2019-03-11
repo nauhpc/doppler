@@ -12,16 +12,20 @@ import datetime
 import statistics
 from functools import reduce
 
-import mysql.connector.pooling as mysql
+import mysql.connector as mysql
 
 
 class Jobstats:
     def __init__(self, host, username, password, db='jobstats'):
-        self.cnx_pool = mysql.MySQLConnectionPool(pool_name='jobstats-site',
-                                                  pool_size=5, host=host, 
-                                                  user=username,
-                                                  password=password,
-                                                  database=db)
+        self.__dbconfig = {
+            'host': host,
+            'user': username,
+            'password': password,
+            'database': db
+        }
+        
+        self.__cnx_pool = mysql.connect(pool_name='jobstats-site',
+                                        pool_size=32, **self.__dbconfig)
 
         self.yesterday = datetime.date.today() - datetime.timedelta(1)
         self.last_week = datetime.date.today() - datetime.timedelta(7)
@@ -56,12 +60,12 @@ class Jobstats:
 
             args.append(since)
 
-        conn   = self.cnx_pool.get_connection()
+        conn   = mysql.connect(pool_name='jobstats-site')
         cursor = conn.cursor()
 
         cursor.execute(query, args)
 
-        users = [i for i in cursor]
+        users = [i[0] for i in cursor]
 
         conn.close()
         return users
@@ -85,6 +89,7 @@ class Jobstats:
 
         if username:
             query += " WHERE username = %s"
+            args.append(username)
 
         if since:
             if 'WHERE' in query[0]:
@@ -95,12 +100,12 @@ class Jobstats:
 
             args.append(since)
 
-        conn   = self.cnx_pool.get_connection()
+        conn   = mysql.connect(pool_name='jobstats-site')
         cursor = conn.cursor()
 
         cursor.execute(query, args)
 
-        accounts = [i for i in cursor]
+        accounts = [i[0] for i in cursor]
 
         conn.close()
         return accounts
@@ -123,12 +128,12 @@ class Jobstats:
     
         query = ("SELECT SUM(jobsum) FROM jobs WHERE username = %s AND date >= %s")
  
-        conn   = self.cnx_pool.get_connection()
+        conn   = mysql.connect(pool_name='jobstats-site')
         cursor = conn.cursor()
 
-        cursor.execute(query, (username, since))
+        cursor.execute(query, (user, since))
         
-        job_sum = cursor[0]
+        job_sum = list(cursor)[0][0]
 
         conn.close()
         return job_sum
@@ -151,7 +156,7 @@ class Jobstats:
     
         query = ("SELECT SUM(jobsum) FROM jobs WHERE account = %s AND date >= %s")
  
-        conn   = self.cnx_pool.get_connection()
+        conn   = mysql.connect(pool_name='jobstats-site')
         cursor = conn.cursor()
 
         cursor.execute(query, (username, since))
@@ -185,14 +190,21 @@ class Jobstats:
             since = self.yesterday
     
         query = "SELECT date, SUM(coresreq), SUM(memoryreq), SUM(tlimitreq), " + \
-                "SUM(cputime), SUM(tlimituse), SUM(memoryuse) FROM jobs"
+                "SUM(cputime), SUM(tlimituse), SUM(memoryuse), SUM(jobsum) FROM jobs"
 
-        args = ()
+        args = []
+
+        if type(account) is tuple:
+            account = account[0]
+
+        if type(user) is tuple:
+            user = user[0]
 
         # Format query based on what username/account name we want
         if account and user:
             query += " WHERE username = %s AND account = %s"
-            args.append(account, user)
+            args.append(user)
+            args.append(account)
 
         elif user:
             query += " WHERE username = %s"
@@ -207,44 +219,51 @@ class Jobstats:
         # the date
         if 'WHERE' not in query:
             query += " WHERE date >= %s"
+            args.append(since)
 
         else:
             query += " AND date >= %s"
+            args.append(since)
 
         
         if by_date:
             query += " GROUP BY date ORDER BY date"
 
 
-        args.append(since)
-             
-        conn   = self.cnx_pool.get_connection()
+        conn   = mysql.connect(pool_name='jobstats-site')
         cursor = conn.cursor()
-        cursor.execute((query), args)
+
+        cursor.execute(query, args)
+
+        user_stats = {}
 
         if by_date:
-            user_stats = {}
-            for day_stats in cursor:
-                (date, coresreq, memoryreq, tlimitreq, cputime, tlimituse, memoryuse) = day_stats
+            rows = list(cursor)
+            for day_stats in rows:
+                date, coresreq, memoryreq, tlimitreq, cputime, tlimituse, memoryuse, jobsum = day_stats
                 user_stats[date] = {
-                    'memreq': memoryreq,
-                    'memuse': memoryuse,
-                    'cpureq': coresreq,
-                    'cputime': cputime,
-                    'timereq': tlimitreq,
-                    'timeuse': tlimituse,
-                }
-
+                    'memreq':  int(memoryreq) if memoryreq else None,
+                    'memuse':  int(memoryuse) if memoryuse else None,
+                    'cpureq':  int(coresreq) if coresreq else None,
+                    'cputime': float(cputime) if cputime else None,
+                    'timereq': int(tlimitreq) if tlimitreq else None,
+                    'timeuse': int(tlimituse) if tlimituse else None,
+                    'jobsum':  int(jobsum) if jobsum else None
+               }
+                    
         else:
-            (date, coresreq, memoryreq, tlimitreq, cputime, tlimituse, memoryuse) = cursor[0]
+            rows = list(cursor)
+
+            date, coresreq, memoryreq, tlimitreq, cputime, tlimituse, memoryuse, jobsum = rows[0]
 
             user_stats = {
-                'memreq': memoryreq,
-                'memuse': memoryuse,
-                'cpureq': coresreq,
-                'cputime': cputime,
-                'timereq': tlimitreq,
-                'timeuse': tlimituse,
+                'memreq':  int(memoryreq) if memoryreq else None,
+                'memuse':  int(memoryuse) if memoryuse else None,
+                'cpureq':  int(coresreq) if coresreq else None,
+                'cputime': float(cputime) if cputime else None,
+                'timereq': int(tlimitreq) if tlimitreq else None,
+                'timeuse': int(tlimituse) if tlimituse else None,
+                'jobsum':  int(jobsum) if jobsum else None
             }
 
             if account:
