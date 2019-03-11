@@ -12,6 +12,7 @@ Authors:
 
 import sys
 import time
+import statistics
 from configparser import ConfigParser
 from datetime import date, timedelta
 from difflib import SequenceMatcher
@@ -20,6 +21,7 @@ import pygal
 from flask import Flask, render_template, request, url_for, redirect
 
 import jobstats
+
 
 app = Flask(__name__)
 
@@ -43,7 +45,8 @@ db = jobstats.Jobstats(host, username, password)
 config.read('config.ini')
 normalize_scores_options = config['SCORES']['normalize']
 normalize_by_score       = False
-ideal_score              = 0
+ideal_score              = 100
+
 
 for arg in normalize_scores_options.split(' '):
     if 'score' in arg:
@@ -51,27 +54,123 @@ for arg in normalize_scores_options.split(' '):
         ideal_score        = float(config['SCORES']['ideal score'])
 
 
-def normalize(score, job_count=0, since=7):
+def normalize(data, all_scores=False, by_date=False):
     """
-    Desc: Normalize a job score based on target total scores and job counts
+    Desc: Get a job score based on usage data
 
     Args:
-        score (double): score to normalize
-        job_count (int) (optional): Job count of user
-        since (int) (optional) (DEPRECATED): Timeframe of score
+        data (dict): usage data to normalize
+        all_scores (bool) (optional): Return all individual scores, along with 
+                                      the total
+        by_date (bool) (optional): Only used in the case that the usage data
+                                   is a collection of dates. Return scores by
+                                   date, instead of condensing all data
 
-    Returns (double):
-        Normalized score based on target total score to meet in config file
+    Returns:
+        Normalized score based on target total score to meet in config file.
+        If all_scores, a dict is returned containing all individual scores, and
+        the total.
+
+    Notes:
+        This function usilizes the constant ideal_score for mean score normalization
     """
-    # Attempt to normalize the score
-    numerator   = score
-    denominator = 1
+    # Data is a single point
+    if 'memuse' in data:
+        memory = None
+        time   = None
+        cpu    = None
+        
+        try:
+            memory = data['memuse']  / data['memreq']
+            memory *= 100
 
-    if normalize_by_score:
-        denominator = ideal_score
+        except:
+            pass
+
+        try:
+            time = data['timeuse'] / data['timereq']
+            time *= 100
+
+        except:
+            pass
+
+        try:
+            cpu = data['cputime']  / (data['timeuse'] * data['cpureq'])
+            cpu *= 100
+
+        except:
+            pass
+
+        applicable_scores = [i for i in [memory, time, cpu] if i and i != 0]
+
+        score = 0
+        if len(applicable_scores) != 0:
+            score = (statistics.mean(applicable_scores) / ideal_score) * 100
+        
+        if all_scores:
+            data['total']        = round(score, 2) if score else None
+            data['cpu-score']    = round(cpu, 2) if cpu else None
+            data['mem-score']    = round(memory, 2) if memory else None
+            data['tlimit-score'] = round(time, 2) if time else None
+            return data
+
+        else:
+            return score
+
+    # Data is a collection of scores by date ({'1/1/18': {...}})
+    else:
+        # Normalize each day
+        if by_date:
+            scores = {}
+            for day in data:
+                scores[day] = normalize(data[day], all_scores=all_scores)
+
+            return scores
+
+        # Sum each day together and get one big score
+        else:
+            data_total = {
+                'memuse'  : 0,
+                'memreq'  : 0,
+                'timeuse' : 0,
+                'timereq' : 0,
+                'cputime' : 0,
+                'cpureq'  : 0
+            }
+           
+            for day in data:
+                for val in day:
+                    data_total[val] += day[val]
+
+            return normalize(data_total, all_scores=all_scores)
+
+        
+
+def getTop(account_type, num, since):
+    """
+    Desc: Get a list of the top N users in a given timeframe
+
+    Args:
+        account_type (string): 'users' or 'accounts'
+        num (int): get top N users
+        since (datetime): Min date to search from present to
+
+    Returns:
+        List of max top N efficient users on the cluster.
+    """
+    all_data_points = []
+    key_func        = None
+
+    if account_type == 'users':
+        all_data_points = db.getUsers(since=since)
+        key_func = lambda user: normalize(db.getStats(user=user, since=since))
+
+    elif account_type == 'accounts':
+        all_data_points = db.getAccounts(since=since)
+        key_func = lambda account: normalize(db.getStats(account=account, since=since))
+
+    return list(reversed(sorted(all_data_points, key=key_func)))[:num]
     
-    return (numerator / denominator) * 100
-
 
 def getTimeframe(days):
     """
@@ -169,7 +268,7 @@ def renderGraph(graph_function, data_set):
     """
     days       = getTimeframe(request.args.get('days'))
     days_delta = 1
-    
+   
     # Only display one data point per week for timeframes above a month
     if data_set.lower() in ['user', 'account'] and days > 31:
         days_delta = 7
@@ -191,74 +290,74 @@ def renderGraph(graph_function, data_set):
 
     if data_set.lower() == 'account':
         # Get the top ten accounts
-        for i in db.getTopAccounts(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
-            data_points[i[0]] = []
+        top_accounts = getTop('accounts', 10, date.today()-timedelta(days))
 
-    elif data_set.lower() == 'user':
+        # Retrieve usage data for each top account
+        for account in top_accounts:
+            data = db.getStats(account=account,
+                               since=(date.today()-timedelta(days)),
+                               by_date=True)
+
+            data_points[account] = data
+
+    if data_set.lower() == 'user':
         # Get the top ten users
-        for i in db.getTopUsers(since=date.today()-timedelta(days) , normalize=normalize)[:10]:
-            data_points[i[0]] = []
+        top_users = getTop('users', 10, date.today()-timedelta(days))
+
+        # Retrieve usage data for each top account
+        for user in top_users:
+            data = db.getStats(user=user,
+                               since=(date.today()-timedelta(days)),
+                               by_date=True)
+
+            data_points[user] = data
 
     elif data_set.lower() == 'cluster':
-        data_points = db.getClusterStats(date.today() - timedelta(days))
-       
-        cores  = []
-        memory = []
-        tLimit = []
-        total  = []
+        data = db.getStats(since=date.today()-timedelta(days), by_date=True)
 
-        dates = data_points.keys()
-        for i in graph.x_labels:
-            stat = {'cores': None, 'memory': None, 'tlimit': None, 'total': None}
-            if i in dates:
-                stat = data_points[i]
-                for j in stat:
-                    if stat[j] == 0.0:
-                        stat[j] = None
+        data_points = {
+            'cores': [],
+            'memory': [],
+            'time limit': [],
+            'total efficiency': []
+        }
+      
+        for i in range(days, 1, -1):
+            current = date.today() - timedelta(i)
+            if current in data:
+                score = normalize(data[current], all_scores=True)
+               
+                data_points['cores'].append(score['cpu-score'])
+                data_points['memory'].append(score['mem-score'])
+                data_points['time limit'].append(score['tlimit-score'])
+                data_points['total efficiency'].append(score['total'])
 
-            cores.append(stat['cores'])
-            memory.append(stat['memory'])
-            tLimit.append(stat['tlimit'])
-            total.append(stat['total'])
-       
-            if total[-1]:
-                total[-1] = normalize(total[-1])
+            else:
+                data_points['cores'].append(None)
+                data_points['memory'].append(None)
+                data_points['time limit'].append(None)
+                data_points['total efficiency'].append(None)
 
-        graph.add('cores', cores)
-        graph.add('memory', memory)
-        graph.add('time limit', tLimit)
-        graph.add('total efficiency', total)
+
+        # Add each account in alphabetical order
+        for i in sorted(data_points.keys()):
+            graph.add(i, [j for j in data_points[i] if j != 0])
 
         return graph.render_response()
 
-    
-    # Get the daily stats for the top ten users/accounts
-    for i in range(days, 0, days_delta * -1):
-        filled_accs = []
-        d = date.today() - timedelta(i)
+    for user in sorted(data_points.keys()):
+        user_scores = []
+
+        for i in range(days, 1, -1):
+            current = date.today() - timedelta(i)
+
+            if current in data_points[user]:
+                user_scores.append(normalize(data_points[user][current]))
+            
+            else:
+                user_scores.append(None)
         
-        statsOnDate = db.getFullAccountList(d, users=(data_set.lower() == 'user'))
-      
-        for j in statsOnDate:
-
-            try:
-                stats = statsOnDate[j]
-                data_points[j].append(normalize(stats['total']))
-                filled_accs.append(j)
-
-            except KeyError:
-                continue
-
-            except:
-                data_points[i].append(0.0) 
-
-        for acc in data_points:
-            if acc not in filled_accs:
-                data_points[acc].append(None)
-
-    # Add each account in alphabetical order
-    for i in sorted(data_points.keys()):
-        graph.add(i, [j for j in data_points[i] if j != 0])
+        graph.add(user, user_scores)
 
     return graph.render_response()
 
@@ -279,59 +378,92 @@ def home():
     time      = getTimeframe(request.args.get('time'))
     timeframe = request.args.get('time')
 
-    top_accounts = []
+    data_points = []
 
+    template = 'home.html'
+
+    template_args = {}
+
+    if not view or view == 'cluster':
+        template = 'cluster.html'
+
+        total_usage = db.getStats(since=(date.today() - timedelta(time)))
+        total_score = normalize(total_usage, all_scores=True)
+
+        active_users = db.getUsers(since=(date.today() - timedelta(time)))
+        total_users  = db.getUsers()
+
+        active_accounts  = db.getAccounts(since=(date.today() - timedelta(time)))
+        total_accounts   = db.getAccounts()
+
+        template_args['total_usage']     = total_usage
+        template_args['total_score']     = total_score
+        template_args['active_users']    = len(active_users)
+        template_args['total_users']     = len(total_users)
+        template_args['active_accounts'] = len(active_accounts)
+        template_args['total_accounts']  = len(total_accounts)
+        template_args['view']            = view
+        template_args['time']            = timeframe
+
+        return render_template(template, **template_args)
+
+    # Retrieve stats for all accounts/users in the given timeframe
     # Default to accounts view
-    if not view or view in ['cluster', 'accounts']:
-        top_accounts = db.getTopAccounts(since=(date.today()-timedelta(time)),
-                                         normalize=normalize)[:100]
+    if view in ['cluster', 'accounts']:
+        data_points = db.getAccounts()
 
     else:
-        top_accounts = db.getTopUsers(since=(date.today()-timedelta(time)), 
-                                      normalize=normalize)[:100]
+        data_points = db.getUsers()
+
+    job_data = []
+
+    # Gather use data for all users/accounts. Remove from array empty ones
+    for i in data_points:
+        data = None
+        if not view or view in ['cluster', 'accounts']:
+            data = db.getStats(account=i, 
+                               since=(date.today() - timedelta(time)))
+
+        else:
+            data = db.getStats(user=i, 
+                               since=(date.today() - timedelta(time)))
+      
+        if data and data['memreq'] and data['cpureq'] and data['timereq']:
+            # Add in the account/user name
+            data['owner'] = i
+            job_data.append(data)
+
+
+    # Organize job data
+    job_data = reversed(sorted(job_data, key=lambda x: normalize(x)))
 
     account_ranks = []
 
-    # Gather data on the top 100 accounts
-    for i in top_accounts:
-        accName = i[0]
-      
-        data = None
-
+    for i in job_data:
+        account_name = None
         if not view or view in ['cluster', 'accounts']:
-            data = db.getAccountTotalScore(accName, 
-                                           since=(date.today() - timedelta(time)))
-       
+            account_name = i['account']
+
         else:
-            data = db.getUserStats(accName, 
-                                   since=(date.today() - timedelta(time)))
+            account_name = i['user']
 
-        cores   = '-'
-        memory  = '-'
-        t_limit = '-'
-        total   = '-'
-        job_sum = '-'
         
-        if data['cores']:
-            cores = data['cores']
+        scores = normalize(i, all_scores=True)
 
-        if data['memory']:
-            memory = data['memory']
+        total = int(scores['total'])
 
-        if data['tlimit']:
-            t_limit = data['tlimit']
-        
-        if data['total']:
-            total = data['total']
-            total = int(normalize(total, job_count=data['jobsum']))
-
-        if data['jobsum']:
-            job_sum = data['jobsum']
-
-        account_ranks.append([len(account_ranks)+1, accName, cores,
+        cores   = scores['cpu-score'] if scores['cpu-score'] else '-'
+        memory  = scores['mem-score'] if scores['mem-score'] else '-'
+        t_limit = scores['tlimit-score'] if scores['tlimit-score'] else '-'
+        total   = scores['total'] if scores['total'] else '-'
+        job_sum = scores['jobsum'] if scores['jobsum'] else '-'
+      
+        account_ranks.append([len(account_ranks)+1, account_name, cores,
                               memory, t_limit, total, job_sum])
 
-    return render_template('home.html', graph=renderGraph, box=pygal.Box, line=pygal.Line, account_ranks=account_ranks, view=view, time=timeframe)
+    return render_template(template, graph=renderGraph, box=pygal.Box,
+                           line=pygal.Line, account_ranks=account_ranks, 
+                           view=view, time=timeframe)
 
 
 @app.route('/account/<account_name>/linegraph.svg')
@@ -345,9 +477,8 @@ def renderAccountLineGraph(account_name):
                                 arguments
     """
     days = int(request.args.get('days'))
-  
-    data = db.getAccountStats(account_name, since=(date.today() - timedelta(days)))
-
+ 
+    data = db.getStats(account=account_name, since=(date.today() - timedelta(days)), by_date=True)
     # Render the line graph
     line_graph = pygal.Line(x_label_rotation=20, range=[0, 100], show_x_labels=False)
 
@@ -360,21 +491,33 @@ def renderAccountLineGraph(account_name):
     else:
         line_graph.title = account_name + ' Efficiency'
 
-    line_graph.x_labels = sorted(data.keys())
+    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 1, -1)]
 
-    cores  = [data[i]['cores']  for i in data]
-    memory = [data[i]['memory'] for i in data]
-    tLimit = [data[i]['tlimit'] for i in data]
-    total  = [data[i]['total']  for i in data]
-    
-    for index, i in enumerate(total):
-        if i:
-            total[index] = normalize(i)
+    data_points = {
+        'cores': [],
+        'memory': [],
+        'time limit': [],
+        'total efficiency': [],
+    }
 
-    line_graph.add('cores', cores)
-    line_graph.add('memory', memory)
-    line_graph.add('time limit', tLimit)
-    line_graph.add('total', total)
+    for i in range(days, 1, -1):
+        current = date.today() - timedelta(i)
+        if current in data:
+            score = normalize(data[current], all_scores=True)
+
+            data_points['cores'].append(score['cpu-score'])
+            data_points['memory'].append(score['mem-score'])
+            data_points['time limit'].append(score['tlimit-score'])
+            data_points['total efficiency'].append(score['total'])
+
+        else:
+            data_points['cores'].append(None)
+            data_points['memory'].append(None)
+            data_points['time limit'].append(None)
+            data_points['total efficiency'].append(None)
+
+    for data in sorted(data_points.keys()):
+        line_graph.add(data, data_points[data])
 
     return line_graph.render_response()
 
@@ -391,7 +534,12 @@ def renderAccountUsersGraph(account_name):
     """
     days = int(request.args.get('days'))
 
-    data = db.getAccountUserJobCounts(account_name, since=date.today()-timedelta(days))
+    users = db.getUsers(account=account_name)
+    
+    data = {}
+
+    for user in users:
+        data[user] = db.getUserJobCount(user, since=date.today()-timedelta(days))
 
     # Render the pie graph
     pie_graph = pygal.Pie()
@@ -431,7 +579,7 @@ def viewAccount(account_name=None):
             return redirect(url_for('home'))
 
         start    = time.time()
-        accounts = db.getAccountList()
+        accounts = db.getAccounts()
         start    = time.time()
 
         similarities = [SequenceMatcher(None, search, i).ratio() for i in accounts]
@@ -441,20 +589,36 @@ def viewAccount(account_name=None):
     timeframe = request.args.get('time')
     
     since = date.today() - timedelta(days)
-    total = db.getAccountTotalScore(account_name, since=since)
+
+    total_scores = normalize(db.getStats(account=account_name, since=since), all_scores=True)
+
+    total = {
+        'total': total_scores['total'],
+        'cores': total_scores['cpu-score'],
+        'memory': total_scores['mem-score'],
+        'tlimit': total_scores['tlimit-score']
+    }
 
     for i in total:
         if total[i] == 0:
             total[i] = '-'
 
     users = {}
-    user_list = db.getAccountUsers(account_name)
+    user_list = db.getUsers(account=account_name)
 
     for user in user_list:
-        users[user] = db.getUserStats(user, account_name, since=since)
-        
+        user_score = normalize(db.getStats(account=account_name, user=user, since=since), all_scores=True)
+    
+        users[user] = {
+            'cores': user_score['cpu-score'],
+            'memory': user_score['mem-score'],
+            'tlimit': user_score['tlimit-score'],
+            'total': user_score['total'],
+            'jobsum': user_score['jobsum']
+        }
+
         for element in users[user].keys():
-            if users[user][element] == 0:
+            if users[user][element] == 0 or not users[user][element]:
                 users[user][element] = '-'
 
     # Render the account view template
@@ -478,9 +642,10 @@ def renderUserAccountLineGraph(user_name, account=None):
     days    = int(request.args.get('days'))
     account = request.args.get('account')
 
-    data = db.getUserStats(user_name, account, 
-                           since=(date.today() - timedelta(days)), 
-                           as_list=True)
+    data = normalize(db.getStats(user=user_name, account=account, 
+                                 since=(date.today() - timedelta(days)), 
+                                 by_date=True), 
+                     by_date=True, all_scores=True)
 
     # Render the line graph
     line_graph = pygal.Line(x_label_rotation=20, range=[0, 100], show_x_labels=False)
@@ -495,29 +660,34 @@ def renderUserAccountLineGraph(user_name, account=None):
         line_graph.title = user_name + ' Efficiency'
 
 
-    line_graph.x_labels = sorted([i[2] for i in data])
-    
-    cores   = []
-    memory  = []
-    t_limit = []
-    total   = []
-    
-    for i in data:
-        cores.append(i[3])
-        memory.append(i[4])
-        t_limit.append(i[5])
-        total.append(i[6])
-   
-    for index, i in enumerate(total):
-        if i:
-            total[index] = normalize(i)
+    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days)]
 
-        avg_jobs = db.getAverageJobCount(since=date.today()-timedelta(7))
+    data_points = {
+        'cores': [],
+        'memory': [],
+        'time limit': [],
+        'total efficiency': [],
+    }
 
-    line_graph.add('cores', cores)
-    line_graph.add('memory', memory)
-    line_graph.add('time limit', t_limit)
-    line_graph.add('total', total)
+    for i in range(days, 1, -1):
+        current = date.today() - timedelta(i)
+        if current in data:
+            score = normalize(data[current], all_scores=True)
+            
+            data_points['cores'].append(score['cpu-score'])
+            data_points['memory'].append(score['mem-score'])
+            data_points['time limit'].append(score['tlimit-score'])
+            data_points['total efficiency'].append(score['total'])
+
+        else:
+            data_points['cores'].append(None)
+            data_points['memory'].append(None)
+            data_points['time limit'].append(None)
+            data_points['total efficiency'].append(None)
+    
+    for data in sorted(data_points.keys()):
+        line_graph.add(data, data_points[data])
+
 
     return line_graph.render_response()
 
@@ -543,7 +713,7 @@ def viewUser(user_name=None):
         if not search:
             return redirect(url_for('home'))
 
-        users        = db.getUserList()
+        users        = db.getUsers()
         similarities = [SequenceMatcher(None, search, i).ratio() for i in users]
         user_name    = users[similarities.index(max(similarities))]
  
@@ -554,8 +724,17 @@ def viewUser(user_name=None):
 
     accounts = {}
 
-    for account in db.getUserAccounts(user_name):
-        accounts[account[0]] = db.getUserStats(user_name, account[0], since=since)
+    for account in db.getAccounts(username=user_name):
+        stats = normalize(db.getStats(user=user_name, account=account, 
+                                      since=since), 
+                          all_scores=True)
+
+        accounts[account] = {
+            'memory': round(stats['mem-score'], 2) if stats['mem-score'] else '-',
+            'cores':  round(stats['cpu-score'], 2) if stats['cpu-score'] else '-',
+            'tlimit': round(stats['tlimit-score'], 2) if stats['tlimit-score'] else '-',
+            'total':  round(stats['total'], 2) if stats['tlimit-score'] else '-',
+        }
 
     # Render the account view template
     return render_template('user.html', user_name=user_name, accounts=accounts, time=timeframe, timeframe=days)
@@ -563,7 +742,7 @@ def viewUser(user_name=None):
 
 if __name__ == '__main__':
     if '--debug' in sys.argv:
-        app.run(debug=True, threaded=True, host='0.0.0.0')
+        app.run(debug=True, threaded=True)
 
     else:
-        app.run()
+        app.run(threaded=True, host='0.0.0.0')

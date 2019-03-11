@@ -52,14 +52,25 @@
             <div class="card-body">
                 <h5 class="card-title"> Total Stats </h5>
                 
-                <table class="table table-hover table-striped">
-                     <tr> <th>account</th> <th>cores</th> <th>memory</th>  <th>time limit</th>  <th>total efficiency</th></tr>
+                <table class="table table-striped table-bordered">
+                    <thead> 
+                    <tr> <th>account</th> <th>cores</th> <th>memory</th>  <th>time limit</th>  <th>total efficiency</th></tr>
+                    </thead>
+                    <tbody>
                      {% for acc in accounts %}
                      <tr><th><a href={{url_for('viewAccount', account_name=acc)}}>{{acc}}</a></th> <td>{{accounts[acc]['cores']}}</td> <td>{{accounts[acc]['memory']}}</td> <td>{{accounts[acc]['tlimit']}}</td> <td>{{accounts[acc]['total']}}</td></tr>    
                      {% endfor %}
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    $(document).ready(function() {
+        $('#table').DataTable();
+    });
+</script>
+
 {% endblock %}

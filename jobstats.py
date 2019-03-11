@@ -7,562 +7,270 @@ Authors:
     - Ian Otto <iso-ian@nau.edu>
 """
 
+
 import datetime
 import statistics
 from functools import reduce
 
-import mysql.connector.pooling as mysql
+import mysql.connector as mysql
 
 
 class Jobstats:
     def __init__(self, host, username, password, db='jobstats'):
-        self.cnx_pool = mysql.MySQLConnectionPool(pool_name='jobstats-site',
-                                                  pool_size=32, host=host, user=username,
-                                                  password=password,
-                                                  database=db)
+        self.__dbconfig = {
+            'host': host,
+            'user': username,
+            'password': password,
+            'database': db
+        }
+        
+        self.__cnx_pool = mysql.connect(pool_name='jobstats-site',
+                                        pool_size=32, **self.__dbconfig)
 
         self.yesterday = datetime.date.today() - datetime.timedelta(1)
         self.last_week = datetime.date.today() - datetime.timedelta(7)
 
 
-    def getTopUsers(self, since=None, normalize=None):
-        users = self.getUserList()
+    def getUsers(self, account=None, since=None):
+        """
+        Desc: Get a list of all users in the database
 
-        stats = []
+        Args:
+            account (string) (optional): specify an account to get a user list 
+                                         of
+            since (datetime) (optional): filter out accounts with no activity
+                                         from date specified to the present
 
-        for i in users:
-            stats.append(self.getUserStats(i, since=since)['total'])
+        Returns: 
+            List of all users present in the database
+        """
+        query = "SELECT DISTINCT username FROM jobs"
+        args  = []
 
-        users = zip(users, stats)
+        if account:
+            query += " WHERE account=%s"
+            args.append(account)
 
-        if normalize:
-            jobs = dict(self.getUsersJobCounts(since=since))
+        if since:
+            if 'WHERE' in query[0]:
+                query += " AND date >= %s"
 
-            users = [i for i in users if i[0] in jobs.keys()]
+            else:
+                query += " WHERE date >= %s"
 
-            return list(reversed(sorted(users,
-                                        key=lambda user:
-                                                normalize(user[1],
-                                                          since=since,
-                                                          job_count=jobs[user[0]]
-                                                         )
-                                        )))
+            args.append(since)
 
-        else:
-            return list(reversed(sorted(users, key=lambda user: user[1])))
+        conn   = mysql.connect(pool_name='jobstats-site')
+        cursor = conn.cursor()
+
+        cursor.execute(query, args)
+
+        users = [i[0] for i in cursor]
+
+        conn.close()
+        return users
 
 
-    def getTopAccounts(self, since=None, normalize=None):
-        accounts = self.getAccountList()
+    def getAccounts(self, username=None, since=None):
+        """
+        Desc: Get a list of all slurm accounts in the database
+        
+        Args:
+            username (string) (optional): specify a user to get the account
+                                          list of
+            since (datetime) (optional): filter out users with no activity
+                                         within the set date range
+        
+        Returns: 
+            List of all slurm accounts in the database
+        """
+        query = "SELECT DISTINCT account FROM jobs"
+        args  = []
 
-        stats = []
+        if username:
+            query += " WHERE username = %s"
+            args.append(username)
 
-        for i in accounts:
-            stats.append(self.getAccountTotalScore(i, since=since)['total'])
+        if since:
+            if 'WHERE' in query[0]:
+                query += " AND date >= %s"
 
-        accounts = zip(accounts, stats)
+            else:
+                query += " WHERE date >= %s"
 
-        if normalize:
-            jobs = dict(self.getAccountsJobCounts(since=since))
+            args.append(since)
 
-            accounts = [i for i in accounts if i[0] in jobs.keys()]
+        conn   = mysql.connect(pool_name='jobstats-site')
+        cursor = conn.cursor()
 
-            return list(reversed(sorted(accounts,
-                                        key=lambda account:
-                                                normalize(account[1],
-                                                          since=since,
-                                                          job_count=jobs[account[0]]
-                                                         )
-                                        )))
+        cursor.execute(query, args)
 
-        else:
-            return list(reversed(sorted(accounts, key=lambda account: account[1])))
+        accounts = [i[0] for i in cursor]
+
+        conn.close()
+        return accounts
 
 
     def getUserJobCount(self, user, since=None):
+        """
+        Desc: Get a count of a user's jobs between the current day and some
+              date
+
+        Args:
+            user (string): username
+            since (dateime): beginning date to check. Default is one day ago
+
+        Returns:
+            Count of all jobs within specified time frame
+        """
         if not since:
             since = self.yesterday
-
-        query = ("SELECT jobsum FROM jobs WHERE user = %s AND date >= %s")
-
-        conn   = self.cnx_pool.get_connection()
+    
+        query = ("SELECT SUM(jobsum) FROM jobs WHERE username = %s AND date >= %s")
+ 
+        conn   = mysql.connect(pool_name='jobstats-site')
         cursor = conn.cursor()
 
         cursor.execute(query, (user, since))
-
-        jobsTotal = 0
-
-        for (jobSum) in cursor:
-            jobsTotal += jobSum
-
-        return jobsTotal
-
-
-    def getAccountUserJobCounts(self, account, since=None):
-        if not since:
-            since = self.yesterday
-
-        users  = {}
-        query  = ("SELECT username, jobsum FROM jobs WHERE account = %s AND date >= %s")
-
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(query, (account, since))
-
-        for (username, jobsum) in cursor:
-            if username in users.keys():
-                users[username] += jobsum
-
-            else:
-                users[username] = jobsum
-
-        conn.close()
-
-        return users
-
-
-    def getAccountUserJobCountsOnDay(self, account, date):
-        users = {}
-        query = ("SELECT username, jobsum FROM jobs WHERE account = %s AND date = %s")
-
-        conn = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(query, (account, date))
-
-        for (username, job_sum) in cursor:
-            users[username] = job_sum
-
-        conn.close()
-
-        return users
-
-
-    def getUsersJobCounts(self, since=None):
-        if not since:
-            since = self.yesterday
-
-        users = {}
-
-        query  = ("SELECT username, jobsum FROM jobs WHERE date >= %s")
-
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(query, (since,))
-
-        for (user, jobsum) in cursor:
-            if user in users.keys():
-                users[user] += jobsum
-
-            else:
-                users[user] = jobsum
-
-        conn.close()
-
-        return users
-
-
-    def getAccountsJobCounts(self, since=None):
-        if not since:
-            since = self.yesterday
-
-        accounts = {}
-
-        query  = ("SELECT account, jobsum FROM jobs WHERE date >= %s")
-
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(query, (since,))
-
-        for (account, jobsum) in cursor:
-            if account in accounts.keys():
-                accounts[account] += jobsum
-
-            else:
-                accounts[account] = jobsum
-
-        conn.close()
-
-        return accounts
-
-
-    def getFullAccountList(self, date, users=False):
-        accounts = {}
-        query    = ("SELECT * FROM jobs WHERE date = %s")
-
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(query, (date,))
-
-        # (username, account, date, cores, memory, timelimit, total, jobsum)
-        for i in cursor:
-            account = None
-            if users:
-                account = i[0]
-
-            else:
-                account = i[1]
-
-            cores   = i[3]
-            memory  = i[4]
-            tLimit  = i[5]
-            total   = i[6]
-            jobSum  = i[7]
-
-            if account in accounts.keys():
-                oldCores  = accounts[account]['cores']
-                oldMemory = accounts[account]['memory']
-                oldTLimit = accounts[account]['tlimit']
-                oldJobSum = accounts[account]['jobsum']
-
-                if oldCores and cores:
-                    statistics.mean([oldCores, cores])
-
-                if oldMemory and memory:
-                    statistics.mean([oldMemory, memory])
-
-                if oldTLimit and tLimit:
-                    statistics.mean([oldTLimit, tLimit])
-
-                jobSum += oldJobSum
-
-            accounts[account] = {'cores': cores, 'memory': memory,
-                                 'tlimit': tLimit, 'total': total,
-                                 'jobsum': jobSum}
-
-        conn.close()
-
-        return accounts
-
-
-    def getClusterStats(self, since=None):
-        if not since:
-            since = self.last_week
-
-        stats        = {}
-        statsAverage = {}
-        query  = ("SELECT * FROM jobs WHERE date >= %s")
-
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(query, (since,))
-
-        for i in cursor:
-            date   = i[2]
-            cores  = i[3]
-            memory = i[4]
-            tLimit = i[5]
-            total  = i[6]
-            jobSum = i[7]
-
-            if date not in stats:
-                stats[date] = {}
-                stats[date]['cores'] = []
-                stats[date]['memory'] = []
-                stats[date]['tlimit'] = []
-                stats[date]['jobsum'] = []
-                stats[date]['total'] = []
-
-            if date in stats.keys():
-                if cores:
-                    stats[date]['cores'].append(cores)
-                
-                if memory:
-                    stats[date]['memory'].append(memory)
-                
-                if tLimit:
-                    stats[date]['tlimit'].append(tLimit)
-                
-                if jobSum:
-                    stats[date]['jobsum'].append(jobSum)
-
-                if total:
-                    stats[date]['total'].append(total)
-
-
-        for i in stats.keys():
-            cores  = None
-            memory = None
-            tLimit = None
-            total  = None
-            jobSum = None
-
-
-            if len(stats[i]['cores']) >= 1:
-                cores = statistics.mean(stats[i]['cores'])
-
-            if len(stats[i]['memory']) >= 1:
-                memory = statistics.mean(stats[i]['memory'])
-
-            if len(stats[i]['tlimit']) >= 1:
-                tLimit = statistics.mean(stats[i]['tlimit']) 
-
-            if len(stats[i]['total']) >= 1:
-                total = statistics.mean(stats[i]['total'])
-
-            jobSum = sum(stats[i]['jobsum'])
-
-            statsAverage[i] = {'cores': cores, 
-                                  'memory': memory,
-                                  'tlimit': tLimit,
-                                  'total': total,
-                                  'jobsum': jobSum}
-
-        conn.close()
         
-        return statsAverage
-
-
-    def getAccountStats(self, account, since=None):
-        if not since:
-            since = self.last_week
-
-        stats = {}
-        query = ("SELECT * FROM jobs WHERE account = %s AND date >= %s")
-
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(query, (account, since))
-
-        for i in cursor:
-            date   = i[2]
-            cores  = i[3]
-            memory = i[4]
-            tLimit = i[5]
-            total  = i[6]
-            jobSum = i[7]
-
-            if date in stats.keys():
-                oldCores  = stats[date]['cores']
-                oldMemory = stats[date]['memory']
-                oldTLimit = stats[date]['tlimit']
-                oldJobSum = stats[date]['jobsum']
-
-                if oldCores:
-                    if cores:
-                        cores = statistics.mean([oldCores, cores]) 
-
-                    else:
-                        cores = oldCores
-
-                if oldMemory:
-                    if memory:
-                        memory = statistics.mean([oldMemory, memory])
-
-                    else:
-                        memory = oldMemory
-
-                if oldTLimit:
-                    if tLimit:
-                        tLimit = statistics.mean([oldTLimit, tLimit])
-
-                    else:
-                        tLimit = oldTLimit
-
-                jobSum += oldJobSum
-
-            stats[date] = {'cores': cores, 'memory': memory,
-                           'tlimit': tLimit, 'total': total,
-                           'jobsum': jobSum}
+        job_sum = list(cursor)[0][0]
 
         conn.close()
-
-        return stats
-
-
-    def getAccountTotalScore(self, account, since=None):
-        stats = self.getAccountStats(account, since=since)
-
-        cores  = 0
-        memory = 0
-        tLimit = 0
-        total  = 0
-        jobSum = 0
-
-        for date in stats:
-            oldCores  = stats[date]['cores']
-            oldMemory = stats[date]['memory']
-            oldTLimit = stats[date]['tlimit']
-            oldJobSum = stats[date]['jobsum']
-
-            if oldCores:
-                if cores:
-                    cores = statistics.mean([oldCores, cores]) 
-
-                else:
-                    cores = oldCores
-
-            if oldMemory:
-                if memory:
-                    memory = statistics.mean([oldMemory, memory])
-
-                else:
-                    memory = oldMemory
-
-            if oldTLimit:
-                if tLimit:
-                    tLimit = statistics.mean([oldTLimit, tLimit])
-
-                else:
-                    tLimit = oldTLimit
-
-            jobSum += oldJobSum
-
-        if jobSum > 0:
-            total = (cores + memory + tLimit) / 3
-
-        return {'cores': round(cores, 2), 'memory': round(memory, 2),
-                'tlimit': round(tLimit, 2), 'total': round(total, 2),
-                'jobsum': round(jobSum, 2)}
+        return job_sum
 
 
-    def getAccountUsers(self, account):
-        query = ("SELECT username FROM jobs WHERE account = %s")
+    def getAccountJobCount(self, account, since=None):
+        """
+        Desc: Get a count of a user's jobs between the current day and some
+              date
 
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
+        Args:
+            account (string): account name
+            since (dateime): beginning date to check. Default is one day ago
 
-        cursor.execute(query, (account,))
-
-        users = [i[0] for i in cursor]
-        users = list(set(users))
-
-        conn.close()
-
-        return users
-
-
-    def getUserStats(self, user, account=None, since=None, as_list=False):
+        Returns:
+            Count of all jobs within specified time frame
+        """
         if not since:
             since = self.yesterday
-
-        if not account:
-            account = ''
-
-        query  = ("SELECT * FROM jobs WHERE username = %s AND date >= %s AND (account = %s OR %s = '')")
-        conn   = self.cnx_pool.get_connection()
+    
+        query = ("SELECT SUM(jobsum) FROM jobs WHERE account = %s AND date >= %s")
+ 
+        conn   = mysql.connect(pool_name='jobstats-site')
         cursor = conn.cursor()
 
-        cursor.execute(query, (user, since, account, account))
-
-        if as_list:
-            data = [i for i in cursor]
-            conn.close()
-            return data
-
-        cores  = 0
-        memory = 0
-        tLimit = 0
-        total  = 0
-        jobSum = 0
-
-        for date in cursor:
-            oldCores  = date[3]
-            oldMemory = date[4]
-            oldTLimit = date[5]
-            oldJobSum = date[7]
-
-            if oldCores:
-                if cores:
-                    cores = ((oldCores * oldJobSum) + (cores * jobSum)) / \
-                            (oldJobSum + jobSum)
-
-                else:
-                    cores = oldCores
-
-            if oldMemory:
-                if memory:
-                    memory = ((oldMemory * oldJobSum) + (memory * jobSum)) / \
-                             (oldJobSum + jobSum)
-
-                else:
-                    memory = oldMemory
-
-            if oldTLimit:
-                if tLimit:
-                    tLimit = ((oldTLimit * oldJobSum) + (tLimit * jobSum)) / \
-                             (oldJobSum + jobSum)
-
-                else:
-                    tLimit = oldTLimit
-
-            jobSum += oldJobSum
-
-        if jobSum > 0:
-            total = (cores + memory + tLimit) / 3
+        cursor.execute(query, (username, since))
+        
+        job_sum = cursor[0]
 
         conn.close()
-
-        return {'cores': round(cores, 2), 'memory': round(memory, 2),
-                'tlimit': round(tLimit, 2), 'total': round(total, 2),
-                'jobsum': round(jobSum, 2)}
+        return job_sum
 
 
-    def getUserAccounts(self, user):
-        query = ("SELECT account FROM jobs WHERE username = %s")
+    def getStats(self, account=None, user=None, since=None, 
+                 by_date=False):
+        """
+        Desc: Get the stats for a user in a given timeframe. Specify both 
+              account and use to narrow search to a specific user/account 
+              combination
 
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
+        Args:
+            account (string): account name. Default None
+            user (string): username. Default none
+            since (datetime): beginning date to check. Default yesterday
+            by_date (bool): Organize scores by day, for plotting on graphs
 
-        cursor.execute(query, (user,))
+        Returns:
+            Dict of resource usages of form {memreq, memuse, cpureq, cputime, 
+                                             timereq, timeuse}
 
-        accounts = [i for i in cursor]
-
-        conn.close()
-
-        return accounts
-
-
-    def getAccountList(self):
-        query = ("SELECT account FROM jobs")
-
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(query)
-
-        accounts = [i[0] for i in cursor]
-        accounts = list(set(accounts))
-
-        conn.close()
-
-        return accounts
-
-
-    def getAverageJobCount(self, since=None):
+            If the user/account combination does not exist in the db, None
+        """
         if not since:
-            since = self.last_week
+            since = self.yesterday
+    
+        query = "SELECT date, SUM(coresreq), SUM(memoryreq), SUM(tlimitreq), " + \
+                "SUM(cputime), SUM(tlimituse), SUM(memoryuse), SUM(jobsum) FROM jobs"
 
-        query = ("SELECT jobsum FROM jobs WHERE date >= %s")
+        args = []
 
-        conn   = self.cnx_pool.get_connection()
+        if type(account) is tuple:
+            account = account[0]
+
+        if type(user) is tuple:
+            user = user[0]
+
+        # Format query based on what username/account name we want
+        if account and user:
+            query += " WHERE username = %s AND account = %s"
+            args.append(user)
+            args.append(account)
+
+        elif user:
+            query += " WHERE username = %s"
+            args.append(user)
+
+        elif account:
+            query += " WHERE account = %s"
+            args.append(account)
+
+
+        # If we want stats by date, we need to do multiple queries based on
+        # the date
+        if 'WHERE' not in query:
+            query += " WHERE date >= %s"
+            args.append(since)
+
+        else:
+            query += " AND date >= %s"
+            args.append(since)
+
+        
+        if by_date:
+            query += " GROUP BY date ORDER BY date"
+
+
+        conn   = mysql.connect(pool_name='jobstats-site')
         cursor = conn.cursor()
 
-        cursor.execute(query, (since,))
+        cursor.execute(query, args)
 
-        jobs = [i[0] for i in cursor]
-        average = reduce(lambda x, y: x + y, jobs, 0)
+        user_stats = {}
+
+        if by_date:
+            rows = list(cursor)
+            for day_stats in rows:
+                date, coresreq, memoryreq, tlimitreq, cputime, tlimituse, memoryuse, jobsum = day_stats
+                user_stats[date] = {
+                    'memreq':  int(memoryreq) if memoryreq else None,
+                    'memuse':  int(memoryuse) if memoryuse else None,
+                    'cpureq':  int(coresreq) if coresreq else None,
+                    'cputime': float(cputime) if cputime else None,
+                    'timereq': int(tlimitreq) if tlimitreq else None,
+                    'timeuse': int(tlimituse) if tlimituse else None,
+                    'jobsum':  int(jobsum) if jobsum else None
+               }
+                    
+        else:
+            rows = list(cursor)
+
+            date, coresreq, memoryreq, tlimitreq, cputime, tlimituse, memoryuse, jobsum = rows[0]
+
+            user_stats = {
+                'memreq':  int(memoryreq) if memoryreq else None,
+                'memuse':  int(memoryuse) if memoryuse else None,
+                'cpureq':  int(coresreq) if coresreq else None,
+                'cputime': float(cputime) if cputime else None,
+                'timereq': int(tlimitreq) if tlimitreq else None,
+                'timeuse': int(tlimituse) if tlimituse else None,
+                'jobsum':  int(jobsum) if jobsum else None
+            }
+
+            if account:
+                user_stats['account'] = account
+
+            if user:
+                user_stats['user'] = user
 
         conn.close()
-
-        return average
-
-
-    def getUserList(self):
-        query  = ("SELECT username FROM jobs")
-        conn   = self.cnx_pool.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(query)
-
-        users = list(set([i[0] for i in cursor]))
-
-        conn.close()
-
-        return users
+        return user_stats
