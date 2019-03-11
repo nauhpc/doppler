@@ -38,20 +38,20 @@
 		  
             <div class="navbar-collapse" id="navbarNavDropdown">
 				<ul class="navbar-nav">
-                    {% if view == 'cluster' %}
+                    {% if view == 'cluster' or not view%}
 			  		<li class="nav-item active">
                     {% else %}
                     <li class="nav-item">
                     {% endif %}
-                        <a class="nav-link" style="{{'color: #fdc131 !important;' if view == 'cluster'}}" href="{{url_for('home', view='cluster', time=time)}}">Cluster</a>
+                        <a class="nav-link" style="{{'color: #fdc131 !important;' if view == 'cluster' or (not account_name and not user_name and not view)}}" href="{{url_for('home', view='cluster', time=time)}}">Cluster</a>
 			        </li>
 
-                    {% if view == 'accounts' or not view %}
+                    {% if view == 'accounts' %}
 			  		<li class="nav-item active" >
                     {% else %}
                     <li class="nav-item">
                     {% endif %}
-                    <a class="nav-link" style="{{'color: #fdc131 !important;' if view == 'accounts' or (not user_name and not view)}}" href="{{url_for('home', view='accounts', time=time)}}">Accounts</a>
+                    <a class="nav-link" style="{{'color: #fdc131 !important;' if view == 'accounts' or (account_name and not view)}}" href="{{url_for('home', view='accounts', time=time)}}">Accounts</a>
 			        </li>
 
                     {% if view == 'users' %}

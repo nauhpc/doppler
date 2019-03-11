@@ -384,7 +384,7 @@ def home():
 
     template_args = {}
 
-    if view == 'cluster':
+    if not view or view == 'cluster':
         template = 'cluster.html'
 
         total_usage = db.getStats(since=(date.today() - timedelta(time)))
@@ -409,7 +409,7 @@ def home():
 
     # Retrieve stats for all accounts/users in the given timeframe
     # Default to accounts view
-    if not view or view in ['cluster', 'accounts']:
+    if view in ['cluster', 'accounts']:
         data_points = db.getAccounts()
 
     else:
