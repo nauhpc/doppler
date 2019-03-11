@@ -3,26 +3,6 @@
 {% block content %}
 <title> Monsoon Jobstats </title>
 
-<!-- graphs -->
-<div class="row">
-    <div class="col-md-6 border">
-        {% if view == 'cluster' %}
-        <embed src="{{url_for('renderClusterLineGraph', days=time)}}">
-        {% elif view == 'users' %}    
-        <embed src="{{url_for('renderUsersLineGraph', days=time)}}">
-        {% else %}
-        <embed src="{{url_for('renderAccountsLineGraph', days=time)}}">
-        {% endif %}
-    </div>
-    <div class="col-md-6 border">
-        {% if view == 'users' %}
-        <embed src={{url_for('renderUsersBoxPlot', days=time)}}>   
-        {% else %}
-        <embed src={{url_for('renderAccountsBoxPlot', days=time)}}>   
-        {% endif %}
-    </div>
-</div>
-
 
 <!-- account ranks  -->
 <div class="row">    
@@ -50,8 +30,11 @@
                         {% endif %}
                     {% endif %}
                 </h5>
-                <table class="table table-hover table-striped">
+                <table id="table" class="table table-striped table-bordered">
+                    <thead>
                     <tr> <th>rank</th> <th>account</th> <th>cores</th> <th>memory</th> <th>time limit</th> <th>jobs</th> <th>total efficiency</th> </tr>
+                    </thead>
+                    <tbody>
                     {% for i in account_ranks %}
                     <tr>
                         <th scope="row">{{i[0]}}</th>
@@ -60,17 +43,24 @@
                         {% else %}
                         <td><a href={{url_for('viewAccount', account_name=i[1], time=time, view=view)}}>{{i[1]}}</a></td> 
                         {% endif %}
-                        <td>{{i[2]|round(2) if i[2] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
-                        <td>{{i[3]|round(2) if i[3] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td> 
-                        <td>{{i[4]|round(2) if i[4] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td>
-                        <td>{{i[6] if i[6] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">ⓘ</div>'|safe}}</td>
+                        <td>{{i[2]|round(2) if i[2] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td> 
+                        <td>{{i[3]|round(2) if i[3] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td> 
+                        <td>{{i[4]|round(2) if i[4] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td>
+                        <td>{{i[6] if i[6] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated.">0</div>'|safe}}</td>
                         <th scope="row">{{i[5]|round(2) if i[5] != '-' else i[5]}}</th> 
                     </tr>
                     {% endfor %}
+                    </tbody>
                     </table>
                 </ul>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    $(document).ready(function() {
+        $('#table').DataTable();
+    } );
+</script>
 {% endblock %}
