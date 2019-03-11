@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<title> Monsoon Jobstats </title>
+
+<!-- cluster stats -->
+<div class="row">
+
+    <div class="col">
+
+<div class="card text-center">
+            <div class="card-body">
+                <b>{{active_users}} Active Users</b>
+                <div class="small">
+                    {{total_users}} Total Users
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+<div class="card text-center">
+    <div class="card-body">
+        <b>{{active_accounts}} Active Accounts</b>
+        <div class="small">
+            {{total_accounts}} Total Accounts
+        </div>
+    </div>
+</div>
+</div>
+
+    <div class="col">
+<div class="card text-center">
+    <div class="card-body">
+        <b>{{total_score['cpu-score']}}% CPU Efficiency</b>
+        <div class="small">
+            {{(total_usage['cputime'] / (60*60))|int}} CPU Hours
+        </div>
+    </div>
+</div>
+</div>
+
+    <div class="col">
+<div class="card text-center">
+    <div class="card-body">
+        <b>{{total_score['mem-score']}}% Memory Efficiency</b>
+        <div class="small">
+            {{total_usage['memuse']|int}} GB Hours
+        </div>
+    </div>
+</div>
+</div>
+
+    <div class="col">
+<div class="card text-center">
+    <div class="card-body">
+        <b>{{total_usage['jobsum']}} Jobs</b>
+        <div class="small">
+            {{(total_usage['jobsum'] / active_users)|int}} per User
+        </div>
+    </div>
+</div>
+</div>
+
+</div>
+
+<!-- graphs -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    Cluster Stats
+                </h5>
+                <div class="row">
+                    <div class="col-md-6 border offset-md-3">
+                        <embed src="{{url_for('renderClusterLineGraph', days=time)}}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    Account Stats
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <embed src="{{url_for('renderAccountsLineGraph', days=time)}}">
+                    </div>
+                    <div class="col-md-6">
+                        <embed src={{url_for('renderAccountsBoxPlot', days=time)}}>   
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    User Stats
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <embed src="{{url_for('renderUsersLineGraph', days=time)}}">
+                    </div>
+                    <div class="col-md-6">
+                        <embed src={{url_for('renderUsersBoxPlot', days=time)}}>   
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                    
+</div>
+
+{% endblock %}
