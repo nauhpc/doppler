@@ -106,7 +106,7 @@ def normalize(data, all_scores=False, by_date=False):
         score = 0
         if len(applicable_scores) != 0:
             score = (statistics.mean(applicable_scores) / ideal_score) * 100
-        
+
         if all_scores:
             data['total']        = round(score, 2) if score else None
             data['cpu-score']    = round(cpu, 2) if cpu else None
@@ -341,7 +341,7 @@ def renderGraph(graph_function, data_set):
 
         # Add each account in alphabetical order
         for i in sorted(data_points.keys()):
-            graph.add(i, [j for j in data_points[i] if j != 0])
+            graph.add(i, [j for j in data_points[i]])
 
         return graph.render_response()
 
@@ -410,10 +410,10 @@ def home():
     # Retrieve stats for all accounts/users in the given timeframe
     # Default to accounts view
     if view in ['cluster', 'accounts']:
-        data_points = db.getAccounts()
+        data_points = db.getAccounts(since=(date.today() - timedelta(time)))
 
     else:
-        data_points = db.getUsers()
+        data_points = db.getUsers(since=(date.today() - timedelta(time)))
 
     job_data = []
 
@@ -427,12 +427,12 @@ def home():
         else:
             data = db.getStats(user=i, 
                                since=(date.today() - timedelta(time)))
-      
-        if data and data['memreq'] and data['cpureq'] and data['timereq']:
+       
+        # If there is user data available for the timeframe, add them 
+        if data and data['jobsum'] > 0:
             # Add in the account/user name
             data['owner'] = i
             job_data.append(data)
-
 
     # Organize job data
     job_data = reversed(sorted(job_data, key=lambda x: normalize(x)))
@@ -447,7 +447,6 @@ def home():
         else:
             account_name = i['user']
 
-        
         scores = normalize(i, all_scores=True)
 
         total = int(scores['total'])
