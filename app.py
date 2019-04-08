@@ -95,7 +95,7 @@ def normalize(data, all_scores=False, by_date=False):
             pass
 
         try:
-            cpu = data['cputime']  / (data['timeuse'] * data['cpureq'])
+            cpu = data['cputime']  / data['idealcpu']
             cpu *= 100
 
         except:
@@ -130,21 +130,52 @@ def normalize(data, all_scores=False, by_date=False):
         # Sum each day together and get one big score
         else:
             data_total = {
-                'memuse'  : 0,
-                'memreq'  : 0,
-                'timeuse' : 0,
-                'timereq' : 0,
-                'cputime' : 0,
-                'cpureq'  : 0
+                'memuse'   : 0,
+                'memreq'   : 0,
+                'timeuse'  : 0,
+                'timereq'  : 0,
+                'cputime'  : 0,
+                'idealcpu' : 0,
+                'jobsum'   : 0
             }
-           
+            
+            # add the current day to the total
             for day in data:
-                for val in day:
-                    data_total[val] += day[val]
+                for val in data[day]:
+                    data_total[val] += data[day][val]
 
             return normalize(data_total, all_scores=all_scores)
 
-        
+
+def getScore(account=None, user=None, since=None, by_date=False):
+    """
+    Desc: Get the score for a given user/account or the enitre cluster
+
+    Args:
+        account (string): account name
+        user (string): username
+        since (datetime): beginning date to check. Defaults to yesterday
+        by_date (bool): organize scores by day, instead of a total score for
+                        a date range
+
+    returns:
+        If a single score: {}
+    """
+    data_raw = db.getStats(account=account, user=user, since=since, by_date=by_date)
+    score    = normalize(data_raw, all_scores=True, by_date=by_date)
+
+    return score
+
+
+def scoreSortKey(user=None, account=None, since=None):
+    score = getScore(user=user, account=account, since=since)
+
+    if not score['total']:
+        return 0
+
+    else:
+        return score['total']
+
 
 def getTop(account_type, num, since):
     """
@@ -163,12 +194,12 @@ def getTop(account_type, num, since):
 
     if account_type == 'users':
         all_data_points = db.getUsers(since=since)
-        key_func = lambda user: normalize(db.getStats(user=user, since=since))
+        key_func = lambda user: scoreSortKey(user=user, since=since) 
 
     elif account_type == 'accounts':
         all_data_points = db.getAccounts(since=since)
-        key_func = lambda account: normalize(db.getStats(account=account, since=since))
-
+        key_func = lambda account: scoreSortKey(account=account, since=since) 
+        
     return list(reversed(sorted(all_data_points, key=key_func)))[:num]
     
 
@@ -254,6 +285,18 @@ def renderClusterLineGraph():
     return renderGraph(pygal.Line, 'cluster')
 
 
+@app.route('/clusterjobsgraph.svg')
+def renderClusterJobsGraph():
+    """
+    Desc: Endpoint for cluster job concentration over time graph
+
+    Args:
+        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
+                                arguments
+    """
+    return renderGraph(pygal.Line, 'jobs')
+
+
 def renderGraph(graph_function, data_set):
     """
     Desc: Render pygal SVG graphs for various data sets and timelines
@@ -285,7 +328,7 @@ def renderGraph(graph_function, data_set):
     else:
         graph.title = data_set + ' Efficiency'
 
-    graph.x_labels    = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
+    graph.x_labels    = [date.today() - timedelta(i) for i in range(days, 0, (days_delta * -1))]
     data_points       = {}
 
     if data_set.lower() == 'account':
@@ -294,9 +337,9 @@ def renderGraph(graph_function, data_set):
 
         # Retrieve usage data for each top account
         for account in top_accounts:
-            data = db.getStats(account=account,
-                               since=(date.today()-timedelta(days)),
-                               by_date=True)
+            data = getScore(account=account,
+                            since=(date.today()-timedelta(days)),
+                            by_date=True)
 
             data_points[account] = data
 
@@ -306,14 +349,14 @@ def renderGraph(graph_function, data_set):
 
         # Retrieve usage data for each top account
         for user in top_users:
-            data = db.getStats(user=user,
+            data = getScore(user=user,
                                since=(date.today()-timedelta(days)),
                                by_date=True)
 
             data_points[user] = data
 
     elif data_set.lower() == 'cluster':
-        data = db.getStats(since=date.today()-timedelta(days), by_date=True)
+        data = getScore(since=date.today()-timedelta(days), by_date=True)
 
         data_points = {
             'cores': [],
@@ -325,7 +368,7 @@ def renderGraph(graph_function, data_set):
         for i in range(days, 1, -1):
             current = date.today() - timedelta(i)
             if current in data:
-                score = normalize(data[current], all_scores=True)
+                score = data[current]
                
                 data_points['cores'].append(score['cpu-score'])
                 data_points['memory'].append(score['mem-score'])
@@ -345,6 +388,31 @@ def renderGraph(graph_function, data_set):
 
         return graph.render_response()
 
+    elif data_set.lower() == 'jobs':
+        graph = graph_function(show_x_labels=False, fill=True)
+        
+        graph.x_labels = [date.today() - timedelta(i) for i in range(days, 0, days_delta * -1)]
+
+        data = db.getJobSum(since=(date.today() - timedelta(days)), by_date=True)
+        
+        data_points = []
+        for i in range(days, 1, -1):
+            current = date.today() - timedelta(i)
+
+            if current in data:
+                data_points.append(data[current])
+
+            else:
+                data_points.append(0)
+           
+
+        graph.add('jobs', data_points)
+
+        graph.range = [0, max([int(i) for i in data_points])]
+        
+        return graph.render_response()
+
+
     for user in sorted(data_points.keys()):
         user_scores = []
 
@@ -356,7 +424,7 @@ def renderGraph(graph_function, data_set):
             
             else:
                 user_scores.append(None)
-        
+       
         graph.add(user, user_scores)
 
     return graph.render_response()
@@ -429,7 +497,7 @@ def home():
                                since=(date.today() - timedelta(time)))
        
         # If there is user data available for the timeframe, add them 
-        if data and data['jobsum'] > 0:
+        if data and data['jobsum'] and data['jobsum'] > 0:
             # Add in the account/user name
             data['owner'] = i
             job_data.append(data)

@@ -9,12 +9,12 @@
             {% if not view and not time %}
             Weekly Stats for {{user_name}}
             {% else %}
-                {% if time == 'W' %}
-                Weekly Stats for {{user_name}} 
-                {% elif time == 'M' %}
+                {% if time == 'M' %}
                 Monthly Stats for {{user_name}}
-                {% else %}
+                {% elif time == 'Q' %}
                 Quarterly Stats for {{user_name}}
+                {% else %}
+                Weekly Stats for {{user_name}} 
                 {% endif %}
             {% endif %}
         </h3>

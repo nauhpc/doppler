@@ -13,7 +13,7 @@
                     {% if not view and not time %}
                     Weekly Account Ranking
                     {% elif view in ['cluster', 'accounts'] or not view %}
-                        {% if time == 'W' %}
+                        {% if time == 'W' or not time %}
                         Weekly Account Ranking 
                         {% elif time == 'M' %}
                         Monthly Account Ranking 
@@ -21,7 +21,7 @@
                         Quarterly Account Ranking 
                         {% endif %}
                     {% else %}
-                        {% if time == 'W' %}
+                        {% if time == 'W' or not time %}
                         Weekly User Ranking 
                         {% elif time == 'M' %}
                         Monthly User Ranking 

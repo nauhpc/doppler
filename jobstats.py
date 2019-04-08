@@ -167,6 +167,46 @@ class Jobstats:
         return job_sum
 
 
+    def getJobSum(self, by_date=False, since=None):
+        """
+        Desc: Get a count of all jobs on the cluster within a timeframe
+
+        Args:
+            by_date (bool) (optional): arrange jobs by date
+            since (datetime) (optional): beginning date to check. Default 
+                                         yesterday
+
+        Returns:
+            Dict of datetimes and jobsums
+
+            Int of total jobs
+        """
+        if not since:
+           since = self.yesterday
+        
+        query = "SELECT date, SUM(jobsum) FROM jobs"
+
+        query += " WHERE date >= %s"
+
+        if by_date:
+            query += " GROUP BY date ORDER BY date"
+
+        conn   = mysql.connect(pool_name='jobstats-site')
+        cursor = conn.cursor()
+
+        cursor.execute(query, (since,))
+
+        if by_date:
+            job_sums = {}
+
+            for day, job_sum in cursor:
+                job_sums[day] = job_sum
+
+            return job_sums
+
+        else:
+            return list(cursor)[0]
+
     def getStats(self, account=None, user=None, since=None, 
                  by_date=False):
         """
@@ -189,8 +229,9 @@ class Jobstats:
         if not since:
             since = self.yesterday
     
-        query = "SELECT date, SUM(coresreq), SUM(memoryreq), SUM(tlimitreq), " + \
-                "SUM(cputime), SUM(tlimituse), SUM(memoryuse), SUM(jobsum) FROM jobs"
+        query = "SELECT date, SUM(idealcpu), SUM(cputime), SUM(memoryreq), " + \
+                "SUM(tlimitreq), SUM(tlimituse), SUM(memoryuse), " + \
+                "SUM(jobsum) FROM jobs"
 
         args = []
 
@@ -214,7 +255,6 @@ class Jobstats:
             query += " WHERE account = %s"
             args.append(account)
 
-
         # If we want stats by date, we need to do multiple queries based on
         # the date
         if 'WHERE' not in query:
@@ -225,7 +265,6 @@ class Jobstats:
             query += " AND date >= %s"
             args.append(since)
 
-        
         if by_date:
             query += " GROUP BY date ORDER BY date"
 
@@ -239,32 +278,32 @@ class Jobstats:
 
         if by_date:
             rows = list(cursor)
+
             for day_stats in rows:
-                date, coresreq, memoryreq, tlimitreq, cputime, tlimituse, memoryuse, jobsum = day_stats
+                date, idealcpu, cputime, memoryreq, tlimitreq, tlimituse, memoryuse, jobsum = day_stats
                 user_stats[date] = {
-                    'memreq':  int(memoryreq) if memoryreq else None,
-                    'memuse':  int(memoryuse) if memoryuse else None,
-                    'cpureq':  int(coresreq) if coresreq else None,
-                    'cputime': float(cputime) if cputime else None,
-                    'timereq': int(tlimitreq) if tlimitreq else None,
-                    'timeuse': int(tlimituse) if tlimituse else None,
-                    'jobsum':  int(jobsum) if jobsum else None
+                    'memreq':   int(memoryreq) if memoryreq else None,
+                    'memuse':   int(memoryuse) if memoryuse else None,
+                    'cputime':  float(cputime) if cputime else None,
+                    'idealcpu': float(idealcpu) if idealcpu else None,
+                    'timereq':  int(tlimitreq) if tlimitreq else None,
+                    'timeuse':  int(tlimituse) if tlimituse else None,
+                    'jobsum':   int(jobsum) if jobsum else None
                }
                     
         else:
             rows = list(cursor)
 
-            date, coresreq, memoryreq, tlimitreq, cputime, tlimituse, memoryuse, jobsum = rows[0]
-
+            date, idealcpu, cputime, memoryreq, tlimitreq, tlimituse, memoryuse, jobsum = rows[0]
             user_stats = {
-                'memreq':  int(memoryreq) if memoryreq else None,
-                'memuse':  int(memoryuse) if memoryuse else None,
-                'cpureq':  int(coresreq) if coresreq else None,
-                'cputime': float(cputime) if cputime else None,
-                'timereq': int(tlimitreq) if tlimitreq else None,
-                'timeuse': int(tlimituse) if tlimituse else None,
-                'jobsum':  int(jobsum) if jobsum else None
-            }
+                'memreq':   int(memoryreq) if memoryreq else None,
+                'memuse':   int(memoryuse) if memoryuse else None,
+                'cputime':  float(cputime) if cputime else None,
+                'idealcpu': float(idealcpu) if idealcpu else None,
+                'timereq':  int(tlimitreq) if tlimitreq else None,
+                'timeuse':  int(tlimituse) if tlimituse else None,
+                'jobsum':   int(jobsum) if jobsum else None
+           }
 
             if account:
                 user_stats['account'] = account

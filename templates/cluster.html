@@ -34,7 +34,7 @@
     <div class="card-body">
         <b>{{total_score['cpu-score']}}% CPU Efficiency</b>
         <div class="small">
-            {{(total_usage['cputime'] / (60*60))|int}} CPU Hours
+            {{((total_usage['cputime'] / (60*60))|int) if total_usage['cputime'] else 0}} CPU Hours
         </div>
     </div>
 </div>
@@ -56,7 +56,7 @@
     <div class="card-body">
         <b>{{total_usage['jobsum']}} Jobs</b>
         <div class="small">
-            {{(total_usage['jobsum'] / active_users)|int}} per User
+            {{((total_usage['jobsum'] / active_users)|int) if total_usage['jobsum'] else 0}} per User
         </div>
     </div>
 </div>
