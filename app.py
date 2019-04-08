@@ -517,7 +517,7 @@ def home():
 
         scores = normalize(i, all_scores=True)
 
-        total = int(scores['total'])
+        total = int(scores['total']) if scores['total'] else '-'
 
         cores   = scores['cpu-score'] if scores['cpu-score'] else '-'
         memory  = scores['mem-score'] if scores['mem-score'] else '-'
