@@ -45,11 +45,23 @@
     <div class="card-body">
         <b>{{total_score['mem-score']}}% Memory Efficiency</b>
         <div class="small">
-            {{total_usage['memuse']|int}} GB
+            {{(total_usage['memuse'] / 1024)|int}} GB
         </div>
     </div>
 </div>
 </div>
+
+<div class="col">
+<div class="card text-center">
+    <div class="card-body">
+        <b>{{total_score['tlimit-score']}}% Time Efficiency</b>
+        <div class="small">
+            {{(total_usage['timeuse'] / (60*60))|int}} Hours
+        </div>
+    </div>
+</div>
+</div>
+
 
     <div class="col">
 <div class="card text-center">
