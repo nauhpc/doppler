@@ -365,7 +365,7 @@ def renderGraph(graph_function, data_set):
             'total efficiency': []
         }
       
-        for i in range(days, 1, -1):
+        for i in range(days, 0, -1):
             current = date.today() - timedelta(i)
             if current in data:
                 score = data[current]
@@ -396,7 +396,7 @@ def renderGraph(graph_function, data_set):
         data = db.getJobSum(since=(date.today() - timedelta(days)), by_date=True)
         
         data_points = []
-        for i in range(days, 1, -1):
+        for i in range(days, 0, -1):
             current = date.today() - timedelta(i)
 
             if current in data:
@@ -416,7 +416,7 @@ def renderGraph(graph_function, data_set):
     for user in sorted(data_points.keys()):
         user_scores = []
 
-        for i in range(days, 1, -1):
+        for i in range(days, 0, -1):
             current = date.today() - timedelta(i)
 
             if current in data_points[user]:
