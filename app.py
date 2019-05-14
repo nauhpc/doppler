@@ -10,6 +10,7 @@ Authors:
 import sys
 import time
 import statistics
+import os
 from configparser import ConfigParser
 from datetime import date, timedelta
 from difflib import SequenceMatcher
@@ -25,7 +26,7 @@ app = Flask(__name__)
 
 # Get the efficiency score normalization options
 config = ConfigParser()
-config.read('config.ini')
+config.read(os.path.dirname(os.path.realpath(__file__)) + '/config.ini')
  
 
 # Get the DB args
