@@ -50,3 +50,14 @@ Apache:
 </VirtualHost>
 ```
 Reference yout WSGI server's [guide](http://gunicorn.org/#quickstart) for more information
+
+
+## Documentation
+Documentation is available for generation via [Sphinx](http://www.sphinx-doc.org/en/master/), with Google-style docstrings. You can generate docs by:
+
+```
+cd docs
+make html
+```
+
+Reference Sphinx's documentation for more information

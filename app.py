@@ -1,8 +1,5 @@
-#!/usr/bin/env python
-
-
-"""
-Desc: Main source file for the jobstats site
+# -*- coding: utf-8 -*-
+"""Main source file for the Doppler web front end
 
 Authors:
     - Chance Nelson <chance-nelson@nau.edu>
@@ -13,6 +10,7 @@ Authors:
 import sys
 import time
 import statistics
+import os
 from configparser import ConfigParser
 from datetime import date, timedelta
 from difflib import SequenceMatcher
@@ -28,7 +26,7 @@ app = Flask(__name__)
 
 # Get the efficiency score normalization options
 config = ConfigParser()
-config.read('config.ini')
+config.read(os.path.dirname(os.path.realpath(__file__)) + '/config.ini')
  
 
 # Get the DB args
@@ -55,24 +53,44 @@ for arg in normalize_scores_options.split(' '):
 
 
 def normalize(data, all_scores=False, by_date=False):
-    """
-    Desc: Get a job score based on usage data
+    """Get a normalized job score based on usage data
 
+    This function utilizes the constant ideal_score for mean score normalization
+    
     Args:
         data (dict): usage data to normalize
-        all_scores (bool) (optional): Return all individual scores, along with 
-                                      the total
-        by_date (bool) (optional): Only used in the case that the usage data
-                                   is a collection of dates. Return scores by
-                                   date, instead of condensing all data
+        all_scores (bool, optional): Return all individual scores, along with 
+            the total
+        by_date (bool, optional): Only used in the case that the usage data
+            is a collection of dates. Return scores by date, instead of 
+            condensing all data
 
     Returns:
-        Normalized score based on target total score to meet in config file.
-        If all_scores, a dict is returned containing all individual scores, and
-        the total.
+        float: Total score, if the ''all_scores'' and ''by_date'' flags are 
+               not set
 
-    Notes:
-        This function usilizes the constant ideal_score for mean score normalization
+        dict: If the ''all_scores'' flag is set, dictionary of all scores, of 
+              the form::
+
+            {
+                'total': 0,
+                'cpu-score': 0,
+                'mem-score': 0,
+                'tlimit-score': 0
+            }
+
+        dict: Dictionary of dictionaries, if the ''by_date'' flag is set, of
+              the form::
+
+            {
+                '1/1/19': {
+                    'total': 0
+                    'cpu-score': 0,
+                    'mem-score': 0,
+                    'tlimit-score': 0
+                },
+                ...
+            }
     """
     # Data is a single point
     if 'memuse' in data:
@@ -148,18 +166,41 @@ def normalize(data, all_scores=False, by_date=False):
 
 
 def getScore(account=None, user=None, since=None, by_date=False):
-    """
-    Desc: Get the score for a given user/account or the enitre cluster
+    """Get the score for a given user, account, or the enitre cluster
+
+    This is the function to use for retrieving scores. It utilizes 
+    ''normalize'' as a helper function
 
     Args:
-        account (string): account name
-        user (string): username
-        since (datetime): beginning date to check. Defaults to yesterday
-        by_date (bool): organize scores by day, instead of a total score for
-                        a date range
+        account (string, optional): account name
+        user (string, optional): username
+        since (datetime, optional): beginning date to check. Defaults to 
+            yesterday
+        by_date (bool, optional): organize scores by day, instead of a total 
+            score for a date range
 
-    returns:
-        If a single score: {}
+    Returns:
+        dict: Dictionary of all scores, of the form::
+
+            {
+                'total': 0,
+                'cpu-score': 0,
+                'mem-score': 0,
+                'tlimit-score': 0
+            }
+
+        dict: Dictionary of dictionaries, if the ''by_date'' flag is set, of
+              the form::
+
+            {
+                '1/1/19': {
+                    'total': 0
+                    'cpu-score': 0,
+                    'mem-score': 0,
+                    'tlimit-score': 0
+                },
+                ...
+            }
     """
     data_raw = db.getStats(account=account, user=user, since=since, by_date=by_date)
     score    = normalize(data_raw, all_scores=True, by_date=by_date)
@@ -168,6 +209,15 @@ def getScore(account=None, user=None, since=None, by_date=False):
 
 
 def scoreSortKey(user=None, account=None, since=None):
+    """Key function for sorting accounts and users by their efficiency score
+
+    This is a helper function for ''getTop()''
+
+    Args:
+        user (string, optional): username
+        account (string, optional): account name
+        since (datetime.datetime, optional): get the total score since a date
+    """
     score = getScore(user=user, account=account, since=since)
 
     if not score['total']:
@@ -178,8 +228,7 @@ def scoreSortKey(user=None, account=None, since=None):
 
 
 def getTop(account_type, num, since):
-    """
-    Desc: Get a list of the top N users in a given timeframe
+    """Get a list of the top N users in a given timeframe
 
     Args:
         account_type (string): 'users' or 'accounts'
@@ -204,8 +253,7 @@ def getTop(account_type, num, since):
     
 
 def getTimeframe(days):
-    """
-    Desc: Get a timeframe in day count from character
+    """Get a timeframe in day count from character
 
     Args:
         days (char): Timeframe identifier character in [W, M, Q]
@@ -227,8 +275,7 @@ def getTimeframe(days):
 
 @app.route('/accountsboxplot.svg')
 def renderAccountsBoxPlot():
-    """
-    Desc: Endpoint for the account lising box plot on the home page
+    """Endpoint for the account lising box plot on the home page
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
@@ -239,8 +286,7 @@ def renderAccountsBoxPlot():
 
 @app.route('/usersboxplot.svg')
 def renderUsersBoxPlot():
-    """
-    Desc: Endpoint for the user listing box plot on the home page
+    """Endpoint for the user listing box plot on the home page
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
@@ -251,8 +297,7 @@ def renderUsersBoxPlot():
 
 @app.route('/userslinegraph.svg')
 def renderUsersLineGraph():
-    """
-    Desc: Endpoint for the user listing line graph on the home page
+    """Endpoint for the user listing line graph on the home page
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
@@ -263,8 +308,7 @@ def renderUsersLineGraph():
 
 @app.route('/accountslinegraph.svg')
 def renderAccountsLineGraph():
-    """
-    Desc: Endpoint for account listing line graph on the home page
+    """Endpoint for account listing line graph on the home page
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
@@ -275,8 +319,7 @@ def renderAccountsLineGraph():
 
 @app.route('/clusterlinegraph.svg')
 def renderClusterLineGraph():
-    """
-    Desc: Endpoint for cluster line graph on the home page
+    """Endpoint for cluster line graph on the home page
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
@@ -287,8 +330,7 @@ def renderClusterLineGraph():
 
 @app.route('/clusterjobsgraph.svg')
 def renderClusterJobsGraph():
-    """
-    Desc: Endpoint for cluster job concentration over time graph
+    """Endpoint for cluster job concentration over time graph
 
     Args:
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
@@ -298,16 +340,22 @@ def renderClusterJobsGraph():
 
 
 def renderGraph(graph_function, data_set):
-    """
-    Desc: Render pygal SVG graphs for various data sets and timelines
+    """Render pygal SVG graphs for various data sets and timelines
+
+    This is the primary graphing function, that all graph endpoints utilize.
+    Graphing methods are passed in through ''graph_function'', and the data
+    requested in ''data_set'' is pulled and rendered
+
+    Timeline arguments are presented through the URL argumented sent to the
+    web request via one of the graph endpoints, called ''days''. ''days'' can
+    be ''W'', ''M'', or ''Q''. If no argument for days is found, the default
+    view is the weekly view.
 
     Args:
-        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
-                                arguments
-        graph_function (func): Pygal function for generating the graph (box and
-                               line currently officially supported)
+        graph_function (function): Pygal function for generating the graph 
+            (box and line currently officially supported)
         data_set (string): string representation of what data set to pull from
-                           (supports 'cluster', 'user', and 'account')
+            (supports 'cluster', 'user', and 'account')
     """
     days       = getTimeframe(request.args.get('days'))
     days_delta = 1
@@ -433,14 +481,24 @@ def renderGraph(graph_function, data_set):
 @app.route('/')
 @app.route('/home')
 def home():
-    """
-    Desc: Endpoint for home page
+    """Endpoint for home page
 
-    Args:
-        view (string) (optional): What data to display in 
-                                  [cluster, accounts, users]
-        time (char) (optional): Timeframe in [W, M, Q], extracted from URL
-                                arguments
+    URL arguments for this page include ''view'', and ''time''. ''view''
+    informs the page what view to show the user::
+        
+        {
+            'cluster': view the main cluster page, with summaries and graphs,
+            'accounts': view the accounts ranks list,
+            'users': view the users ranks list
+        }
+
+    ''time'' emforces a timeline for grabbing scores, and rendering graphs::
+
+        {
+            'W': weekly,
+            'M': monthly,
+            'Q': Quarterly
+        }
     """
     view      = request.args.get('view')
     time      = getTimeframe(request.args.get('time'))
@@ -535,13 +593,12 @@ def home():
 
 @app.route('/account/<account_name>/linegraph.svg')
 def renderAccountLineGraph(account_name):
-    """
-    Desc: Endpoint for the account-centric line graph
+    """Endpoint for the account-centric line graph
+
+    This endoint supports The ''days'' argument, for timeframe constraints.
 
     Args:
-        account_name (string): Account to query
-        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
-                                arguments
+        account_name (string): name of the account to query
     """
     days = int(request.args.get('days'))
  
@@ -591,13 +648,12 @@ def renderAccountLineGraph(account_name):
 
 @app.route('/account/<account_name>/userpiegraph.svg')
 def renderAccountUsersGraph(account_name):
-    """
-    Desc: Endpoint for the accont users job distribution pie graph
+    """Endpoint for the accont users job distribution pie graph
 
+    This endoint supports The ''days'' URL argument, for timeframe constraints.
+    
     Args:
         account_name (string): Account to query
-        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
-                                arguments
     """
     days = int(request.args.get('days'))
 
@@ -623,15 +679,17 @@ def renderAccountUsersGraph(account_name):
 @app.route('/account')
 @app.route('/account/<account_name>')
 def viewAccount(account_name=None):
-    """
-    Desc: Endpoint for the account view page
+    """Endpoint for the account view page
+    
+    URL arguments for the endpoint include ''account'', which is added
+    for search queries. This name will be searched in the database, and the
+    page will be redirected to the closest match.
+
+    This endoint supports The ''time'' URL argument, for timeframe constraints.
 
     Args:
         account (string) (optional): Account to query, extracted from URL
                                      args.
-        account_name (string) (optional): Account to query
-        time (char) (optional): Timeframe in [W, M, Q], extracted from URL
-                                arguments
     """
     # Make sure we have an account name from either the url or the args
     # It will be in the args if we're coming from a search
@@ -657,7 +715,8 @@ def viewAccount(account_name=None):
     
     since = date.today() - timedelta(days)
 
-    total_scores = normalize(db.getStats(account=account_name, since=since), all_scores=True)
+    total_scores = normalize(db.getStats(account=account_name, since=since), 
+                             all_scores=True)
 
     total = {
         'total': total_scores['total'],
@@ -674,7 +733,9 @@ def viewAccount(account_name=None):
     user_list = db.getUsers(account=account_name)
 
     for user in user_list:
-        user_score = normalize(db.getStats(account=account_name, user=user, since=since), all_scores=True)
+        user_score = normalize(db.getStats(account=account_name, user=user, 
+                                           since=since), 
+                               all_scores=True)
     
         users[user] = {
             'cores': user_score['cpu-score'],
@@ -689,20 +750,26 @@ def viewAccount(account_name=None):
                 users[user][element] = '-'
 
     # Render the account view template
-    return render_template('account.html', account_name=account_name, users=users, total=total, time=timeframe, timeframe=days)
+    return render_template('account.html', account_name=account_name, 
+                           users=users, total=total, time=timeframe, 
+                           timeframe=days)
 
 
 @app.route('/user/<user_name>/linegraph.svg')
 def renderUserAccountLineGraph(user_name, account=None):
-    """
-    Desc: Endpoint for the account line graph, displaying indiviual user
-          efficiencies
+    """Endpoint for the account line graph, displaying indiviual user efficiencies
+
+    URL arguments for the endpoint include ''search'', which is added
+    for search queries. This name will be searched in the database, and the
+    page will be redirected to the closest match.
+
+    This endoint supports The ''days'' URL argument, for timeframe constraints.
 
     Args:
         user_name (string): Username to query
-        account_name (string) (optional): Account to query, used to narrow
-                                          down search for users with multiple
-                                          slurm accounts
+        account (string) (optional): Account to query, used to narrow
+                                     down search for users with multiple
+                                     slurm accounts
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
@@ -762,14 +829,13 @@ def renderUserAccountLineGraph(user_name, account=None):
 @app.route('/user')
 @app.route('/user/<user_name>')
 def viewUser(user_name=None):
-    """
-    Desc: Endpoint for the user view page 
+    """Endpoint for the user view page 
+
+    This endoint supports The ''time'' URL argument, for timeframe constraints.
 
     Args:
         user_name (string) (optional): Username to query
         search (string) (optional): Username to query, extracted from URL args
-        days (char) (optional): Timeframe in [W, M, Q], extracted from URL
-                                arguments
     """
     # Make sure we have an account name from either the url or the args
     # It will be in the args if we're coming from a search

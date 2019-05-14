@@ -1,6 +1,4 @@
-"""
-Desc: Library for extracting and parsing information from the jobstats MySQL 
-      database
+"""Library for extracting and parsing information from the jobstats MySQL database
 
 Authors:
     - Chance Nelson <chance-nelson@nau.edu>
@@ -16,7 +14,20 @@ import mysql.connector as mysql
 
 
 class Jobstats:
+    """Object instantiated for interacting with the Jobstats MySQL database
+    """
     def __init__(self, host, username, password, db='jobstats'):
+        """Constructor
+        
+        Args:
+            host (string): hostname of the server where the db is located
+            username (string): username of the db user with read permissions to
+                the jobstats db
+            password (string): password for ''username''
+            db (string, optional): name of the database to use. Defaults to 
+                'jobstats'
+
+        """
         self.__dbconfig = {
             'host': host,
             'user': username,
@@ -32,17 +43,16 @@ class Jobstats:
 
 
     def getUsers(self, account=None, since=None):
-        """
-        Desc: Get a list of all users in the database
+        """Get a list of all users in the database
 
         Args:
-            account (string) (optional): specify an account to get a user list 
-                                         of
-            since (datetime) (optional): filter out accounts with no activity
-                                         from date specified to the present
+            account (string, optional): specify an account to get a user list 
+                of
+            since (datetime, optional): filter out accounts with no activity
+                from date specified to the present
 
         Returns: 
-            List of all users present in the database
+            list: all users present in the database
         """
         query = "SELECT DISTINCT username FROM jobs"
         args  = []
@@ -72,17 +82,16 @@ class Jobstats:
 
 
     def getAccounts(self, username=None, since=None):
-        """
-        Desc: Get a list of all slurm accounts in the database
+        """Get a list of all slurm accounts in the database
         
         Args:
-            username (string) (optional): specify a user to get the account
-                                          list of
-            since (datetime) (optional): filter out users with no activity
-                                         within the set date range
+            username (string, optional): specify a user to get the account
+                list of
+            since (datetime, optional): filter out users with no activity
+                within the set date range
         
         Returns: 
-            List of all slurm accounts in the database
+            list: all slurm accounts in the database
         """
         query = "SELECT DISTINCT account FROM jobs"
         args  = []
@@ -112,16 +121,14 @@ class Jobstats:
 
 
     def getUserJobCount(self, user, since=None):
-        """
-        Desc: Get a count of a user's jobs between the current day and some
-              date
+        """Get a count of a user's jobs between the current day and some date
 
         Args:
             user (string): username
             since (dateime): beginning date to check. Default is one day ago
 
         Returns:
-            Count of all jobs within specified time frame
+            int: Count of all jobs within specified time frame
         """
         if not since:
             since = self.yesterday
@@ -140,16 +147,14 @@ class Jobstats:
 
 
     def getAccountJobCount(self, account, since=None):
-        """
-        Desc: Get a count of a user's jobs between the current day and some
-              date
+        """Get a count of a user's jobs between the current day and some date
 
         Args:
             account (string): account name
             since (dateime): beginning date to check. Default is one day ago
 
         Returns:
-            Count of all jobs within specified time frame
+            int: Count of all jobs within specified time frame
         """
         if not since:
             since = self.yesterday
@@ -168,18 +173,17 @@ class Jobstats:
 
 
     def getJobSum(self, by_date=False, since=None):
-        """
-        Desc: Get a count of all jobs on the cluster within a timeframe
+        """Get a count of all jobs on the cluster within a timeframe
 
         Args:
             by_date (bool) (optional): arrange jobs by date
             since (datetime) (optional): beginning date to check. Default 
-                                         yesterday
+                yesterday
 
         Returns:
-            Dict of datetimes and jobsums
+            dict: dictionary with date as key, and jobsum as value
 
-            Int of total jobs
+            int: total jobs
         """
         if not since:
            since = self.yesterday
@@ -207,22 +211,31 @@ class Jobstats:
         else:
             return list(cursor)[0]
 
-    def getStats(self, account=None, user=None, since=None, 
-                 by_date=False):
-        """
-        Desc: Get the stats for a user in a given timeframe. Specify both 
-              account and use to narrow search to a specific user/account 
-              combination
+    def getStats(self, account=None, user=None, since=None, by_date=False):
+        """Get the stats for a user/account in a given timeframe. 
+
+        Specify both account and use to narrow search to a specific 
+        user/account combination.
 
         Args:
-            account (string): account name. Default None
-            user (string): username. Default none
-            since (datetime): beginning date to check. Default yesterday
-            by_date (bool): Organize scores by day, for plotting on graphs
+            account (string, optional): account name. Default None
+            user (string, optional): username. Default none
+            since (datetime, optional): beginning date to check. Default 
+                yesterday
+            by_date (bool, optional): Organize scores by day, for plotting on 
+                graphs
 
         Returns:
-            Dict of resource usages of form {memreq, memuse, cpureq, cputime, 
-                                             timereq, timeuse}
+            dict: resource usages of form::
+            
+                {
+                    memreq:  ., 
+                    memuse:  ., 
+                    cpureq:  ., 
+                    cputime: ., 
+                    timereq: ., 
+                    timeuse: .
+                }
 
             If the user/account combination does not exist in the db, None
         """
