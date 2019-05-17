@@ -325,7 +325,7 @@ def renderClusterLineGraph():
         days (char) (optional): Timeframe in [W, M, Q], extracted from URL
                                 arguments
     """
-    return renderGraph(pygal.Line, 'cluster')
+    return renderGraph(pygal.Line, 'Cluster')
 
 
 @app.route('/clusterjobsgraph.svg')
