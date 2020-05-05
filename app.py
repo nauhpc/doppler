@@ -51,6 +51,19 @@ for arg in normalize_scores_options.split(' '):
         normalize_by_score = True
         ideal_score        = float(config['SCORES']['ideal score'])
 
+def getCoreHours(my_dict):
+    """Get a formatted string for core hours
+
+    Args:
+        my_dict (dict): a dictionary with jobstats data
+    Returns:
+        string
+    """    
+    result = '-'
+    if(my_dict['cputime']):
+        my_dict['cputime'] = my_dict['cputime'] / 3600.0
+        result = '{:.1f}'.format(my_dict['cputime'])
+    return result
 
 def normalize(data, all_scores=False, by_date=False):
     """Get a normalized job score based on usage data
@@ -582,9 +595,11 @@ def home():
         t_limit = scores['tlimit-score'] if scores['tlimit-score'] else '-'
         total   = scores['total'] if scores['total'] else '-'
         job_sum = scores['jobsum'] if scores['jobsum'] else '-'
+
+        core_hours = getCoreHours(i)
       
         account_ranks.append([len(account_ranks)+1, account_name, cores,
-                              memory, t_limit, total, job_sum])
+                              memory, t_limit, total, job_sum, core_hours])
 
     return render_template(template, graph=renderGraph, box=pygal.Box,
                            line=pygal.Line, account_ranks=account_ranks, 
@@ -733,16 +748,16 @@ def viewAccount(account_name=None):
     user_list = db.getUsers(account=account_name)
 
     for user in user_list:
-        user_score = normalize(db.getStats(account=account_name, user=user, 
-                                           since=since), 
-                               all_scores=True)
-    
+        stats = db.getStats(account=account_name, user=user, since=since)
+        user_score = normalize(stats, all_scores=True)
+
         users[user] = {
             'cores': user_score['cpu-score'],
             'memory': user_score['mem-score'],
             'tlimit': user_score['tlimit-score'],
             'total': user_score['total'],
-            'jobsum': user_score['jobsum']
+            'jobsum': user_score['jobsum'],
+            'core hours': getCoreHours(stats)
         }
 
         for element in users[user].keys():
@@ -863,10 +878,11 @@ def viewUser(user_name=None):
                           all_scores=True)
 
         accounts[account] = {
-            'memory': round(stats['mem-score'], 2) if stats['mem-score'] else '-',
-            'cores':  round(stats['cpu-score'], 2) if stats['cpu-score'] else '-',
-            'tlimit': round(stats['tlimit-score'], 2) if stats['tlimit-score'] else '-',
-            'total':  round(stats['total'], 2) if stats['tlimit-score'] else '-',
+            'memory':     round(stats['mem-score'], 2) if stats['mem-score'] else '-',
+            'cores':      round(stats['cpu-score'], 2) if stats['cpu-score'] else '-',
+            'tlimit':     round(stats['tlimit-score'], 2) if stats['tlimit-score'] else '-',
+            'total':      round(stats['total'], 2) if stats['tlimit-score'] else '-',
+            'core hours': getCoreHours(stats)
         }
 
     # Render the account view template

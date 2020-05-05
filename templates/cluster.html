@@ -51,24 +51,12 @@
 </div>
 </div>
 
-<div class="col">
+    <div class="col">
 <div class="card text-center">
     <div class="card-body">
         <b>{{total_score['tlimit-score']}}% Time Efficiency</b>
         <div class="small">
             {{(total_usage['timeuse'] / (60*60))|int}} Hours
-        </div>
-    </div>
-</div>
-</div>
-
-
-    <div class="col">
-<div class="card text-center">
-    <div class="card-body">
-        <b>{{total_usage['jobsum']}} Jobs</b>
-        <div class="small">
-            {{((total_usage['jobsum'] / active_users)|int) if total_usage['jobsum'] else 0}} per User
         </div>
     </div>
 </div>
