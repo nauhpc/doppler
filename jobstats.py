@@ -29,21 +29,22 @@ class Jobstats:
                 'jobstats'
 
         """
-        self.__dbconfig = {
-            'host': host,
-            'user': username,
-            'password': password,
-            'database': db
-        }
-        
-        self.__cnx_pool = mysql.connect(pool_name='jobstats-site',
-                                        pool_size=32, **self.__dbconfig)
-        cnx = mysql.connect(host=host, user=username, password=password,
-                            db='jobstats')
+        self.db_host = host
+        self.db_user = username
+        self.db_password = password
+        self.db_name = db
+        cnx = mysql.connect(host=self.db_host, user=self.db_user,
+                            password=self.db_password, database=self.db_name)
         cursor = cnx.cursor()
         self.data = self.queryDatabase(cursor)
         self.yesterday = datetime.date.today() - datetime.timedelta(1)
         self.last_week = datetime.date.today() - datetime.timedelta(7)
+
+    def update(self):
+        cnx = mysql.connect(host=self.db_host, user=self.db_user,
+                            password=self.db_password, database=self.db_name)
+        cursor = cnx.cursor()        
+        self.data = self.queryDatabase(cursor)
 
     def getTimeSlice(self, fromDate, toDate):
         """

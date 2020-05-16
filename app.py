@@ -455,6 +455,7 @@ def home():
             'Q': Quarterly
         }
     """
+    db.update()
     view      = request.args.get('view')
     time      = getTimeframe(request.args.get('time'))
     timeframe = request.args.get('time')
@@ -642,6 +643,7 @@ def viewAccount(account_name=None):
         account (string) (optional): Account to query, extracted from URL
                                      args.
     """
+    db.update()
     # Make sure we have an account name from either the url or the args
     # It will be in the args if we're coming from a search
     if not account_name:
@@ -782,6 +784,7 @@ def viewUser(user_name=None):
         user_name (string) (optional): Username to query
         search (string) (optional): Username to query, extracted from URL args
     """
+    db.update()
     # Make sure we have an account name from either the url or the args
     # It will be in the args if we're coming from a search
     if not user_name:
