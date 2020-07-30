@@ -13,6 +13,19 @@ import sys
 
 import mysql.connector as mysql
 import os
+import copy
+
+def add_dicts(dict1, dict2):
+    dict1['memreq'] += dict2['memreq'] if dict2['memreq'] is not None else 0.0
+    dict1['memuse'] += dict2['memuse'] if dict2['memuse'] is not None else 0.0
+    dict1['cputime'] += dict2['cputime'] if dict2['cputime'] is not None else 0.0
+    dict1['idealcpu'] += dict2['idealcpu'] if dict2['idealcpu'] is not None else 0.0
+    dict1['timereq'] += dict2['timereq'] if dict2['timereq'] is not None else 0.0
+    dict1['timeuse'] += dict2['timeuse'] if dict2['timeuse'] is not None else 0.0
+    dict1['jobsum'] += dict2['jobsum'] if dict2['jobsum'] is not None else 0.0
+    dict1['gpuhours'] += dict2['gpuhours'] if dict2['gpuhours'] is not None else 0.0
+    dict1['gpureq'] += dict2['gpureq'] if dict2['gpureq'] is not None else 0.0
+    return dict1
 
 class Jobstats:
     """Object instantiated for interacting with the Jobstats MySQL database
@@ -73,9 +86,43 @@ class Jobstats:
                 'cputime': cpu_time,
                 'timereq': tlimit_req,
                 'timeuse': tlimit_use,
-                'jobsum': jobsum
+                'jobsum': jobsum,
             }
             result.append(inner_dict)
+
+        query = "SELECT username,account,date,jobid,gputime,idealgpu "
+        query += "FROM gpuinfo ORDER by date"
+
+        cursor.execute(query, tuple(args))
+
+        # iterate through all gpuinfo values, load into a dict, then update the "result" dict
+        # your new dict will have a 3 part key username:account:date
+        gpu_dict = dict()
+        for username, account, date, jobid, gputime, idealgpu in cursor:
+            key = username + ":" + account + ":" + date.strftime('%Y-%m-%d')
+            try:
+                # IMPORTANT: gputime and idealgpu are in seconds
+                #            similar to cputime and idealcpu
+                gpu_dict[key][0] += gputime / 3600.0
+                gpu_dict[key][1] += idealgpu / 3600.0
+            except:
+                gpu_dict[key] = [gputime / 3600.0, idealgpu / 3600.0]
+
+        for key in gpu_dict:
+            username, account, date = key.split(":")
+            for i in range(len(result)):
+                if result[i]['username'] == username and \
+                   result[i]['account'] == account and \
+                   result[i]['date'].strftime('%Y-%m-%d') == date:
+                    result[i]['gpuhours'] = gpu_dict[key][0]
+                    result[i]['gpureq'] = gpu_dict[key][1]
+
+
+        for i in range(len(result)):
+            if 'gpuhours' not in result[i].keys():
+                result[i]['gpuhours'] = 0.0
+                result[i]['gpureq'] = 0.0
+
         return result
 
     def getUsers(self, account=None, since=None):
@@ -166,8 +213,11 @@ class Jobstats:
                     memuse:  ., 
                     cpureq:  ., 
                     cputime: ., 
-                    timereq: ., 
-                    timeuse: .
+                    timereq:  ., 
+                    timeuse:  .,
+                    jobsum:   .,
+                    gpuhours: .,
+                    gpureq:  .
                 }
 
             If the user/account combination does not exist in the db, None
@@ -175,13 +225,17 @@ class Jobstats:
         if not since:
             since = self.yesterday
 
-        user_stats = {'memreq': 0,
-                      'memuse': 0,
-                      'cputime': 0.0,
-                      'idealcpu': 0.0,
-                      'timereq': 0,
-                      'timeuse': 0,
-                      'jobsum': 0}
+        default_stats = {'memreq': 0.0,
+                         'memuse': 0.0,
+                         'cputime': 0.0,
+                         'idealcpu': 0.0,
+                         'timereq': 0.0,
+                         'timeuse': 0.0,
+                         'jobsum': 0.0,
+                         'gpuhours': 0.0,
+                         'gpureq': 0.0}
+        user_stats = copy.deepcopy(default_stats)
+
         date_dict = dict()
         last_date = None
         count = 0
@@ -191,50 +245,21 @@ class Jobstats:
                     if last_date is None:
                         last_date = row['date']
                     if row['date'] != last_date or row  == self.data[-1]:
-                        if user_stats != {'memreq': 0, 'memuse': 0, 'cputime': 0.0, 'idealcpu': 0.0, 'timereq': 0, 'timeuse': 0, 'jobsum': 0}:
+                        if user_stats != default_stats:
                             date_dict[last_date] = user_stats
                         last_date = row['date']
-                        user_stats = {'memreq': 0,
-                                      'memuse': 0,
-                                      'cputime': 0.0,
-                                      'idealcpu': 0.0,
-                                      'timereq': 0,
-                                      'timeuse': 0,
-                                      'jobsum': 0}
+                        user_stats = copy.deepcopy(default_stats)
+
                 if user and account:
                     if row['username'] == user and row['account'] == account:
-                        user_stats['memreq'] += row['memreq'] if row['memreq'] is not None else 0.0
-                        user_stats['memuse'] += row['memuse'] if row['memuse'] is not None else 0.0
-                        user_stats['cputime'] += row['cputime'] if row['cputime'] is not None else 0.0
-                        user_stats['idealcpu'] += row['idealcpu'] if row['idealcpu'] is not None else 0.0
-                        user_stats['timereq'] += row['timereq'] if row['timereq'] is not None else 0.0
-                        user_stats['timeuse'] += row['timeuse'] if row['timeuse'] is not None else 0.0
-                        user_stats['jobsum'] += row['jobsum'] if row['jobsum'] is not None else 0.0
+                        user_stats = add_dicts(user_stats, row)
                 elif user and row['username'] == user:
-                        user_stats['memreq'] += row['memreq'] if row['memreq'] is not None else 0.0
-                        user_stats['memuse'] += row['memuse'] if row['memuse'] is not None else 0.0
-                        user_stats['cputime'] += row['cputime'] if row['cputime'] is not None else 0.0
-                        user_stats['idealcpu'] += row['idealcpu'] if row['idealcpu'] is not None else 0.0
-                        user_stats['timereq'] += row['timereq'] if row['timereq'] is not None else 0.0
-                        user_stats['timeuse'] += row['timeuse'] if row['timeuse'] is not None else 0.0
-                        user_stats['jobsum'] += row['jobsum'] if row['jobsum'] is not None else 0.0
+                    user_stats = add_dicts(user_stats, row)
                 elif account and row['account'] == account:
-                        user_stats['memreq'] += row['memreq'] if row['memreq'] is not None else 0.0
-                        user_stats['memuse'] += row['memuse'] if row['memuse'] is not None else 0.0
-                        user_stats['cputime'] += row['cputime'] if row['cputime'] is not None else 0.0
-                        user_stats['idealcpu'] += row['idealcpu'] if row['idealcpu'] is not None else 0.0
-                        user_stats['timereq'] += row['timereq'] if row['timereq'] is not None else 0.0
-                        user_stats['timeuse'] += row['timeuse'] if row['timeuse'] is not None else 0.0
-                        user_stats['jobsum'] += row['jobsum'] if row['jobsum'] is not None else 0.0
+                    user_stats = add_dicts(user_stats, row)
                 elif user is None and account is None:
-                        user_stats['memreq'] += row['memreq'] if row['memreq'] is not None else 0.0
-                        user_stats['memuse'] += row['memuse'] if row['memuse'] is not None else 0.0
-                        user_stats['cputime'] += row['cputime'] if row['cputime'] is not None else 0.0
-                        user_stats['idealcpu'] += row['idealcpu'] if row['idealcpu'] is not None else 0.0
-                        user_stats['timereq'] += row['timereq'] if row['timereq'] is not None else 0.0
-                        user_stats['timeuse'] += row['timeuse'] if row['timeuse'] is not None else 0.0
-                        user_stats['jobsum'] += row['jobsum'] if row['jobsum'] is not None else 0.0
-                
+                    user_stats = add_dicts(user_stats, row)
+
         if account:
             user_stats['account'] = account
         if user:

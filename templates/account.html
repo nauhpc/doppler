@@ -36,8 +36,20 @@
                     {% endif %}
                 </h3>
                 <table class="table table-hover table-striped">
-                     <tr> <th>cores</th> <th>memory</th>  <th>time limit</th>  <th>total efficiency</th></tr>
-                     <tr> <td>{{total['cores']}}</td> <td>{{total['memory']}}</td> <td>{{total['tlimit']}}</td> <td>{{total['total']}}</td></tr>    
+                  <tr>
+		    <th>cpu eff</th>
+		    <th>mem eff</th>
+		    <th>time eff</th>
+		    <th>gpu eff</th>
+		    <th>total eff</th>
+		  </tr>
+                  <tr>
+		    <td>{{total['cores']}}</td>
+		    <td>{{total['memory']}}</td>
+		    <td>{{total['tlimit']}}</td>
+		    <td>{{total['gpu']}}</td>
+		    <td>{{total['total']}}</td>
+		  </tr>    
                 </table>
             </div>
         </div>
@@ -63,8 +75,15 @@
                 </h5>
                 <table id="table" class="table table-striped table-bordered">
                     <head>
-                    <tr> <th>user</th> <th>cores</th> <th>memory</th> <th>time
-                    limit</th> <th>total efficiency</th> <th>core hours</th></tr>
+                      <tr>
+			<th>user</th>
+			<th>cpu eff</th>
+			<th>mem eff</th>
+			<th>time ff</th>
+			<th>total eff</th>
+			<th>cpu hrs</th>
+			<th>gpu hrs</th>
+		      </tr>
                     </thead>
                     <tbody>
                     {% for i in users|sort() %}
@@ -73,8 +92,9 @@
                         <td>{{users[i]['cores']|round(2) if users[i]['cores'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td>
                         <td>{{users[i]['memory']|round(2) if users[i]['memory'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td> 
                         <td>{{users[i]['tlimit']|round(2) if users[i]['tlimit'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td> 
-                        <td>{{users[i]['total']|round(2) if users[i]['total'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td> 
-                        <td>{{users[i]['core hours']}}</td> 
+                        <td>{{users[i]['total']|round(2) if users[i]['total'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td>
+                        <td>{{users[i]['core hours']}}</td>
+			<td>{{users[i]['gpu hours']}}</td>
                     </tr>
                     {%endfor%}
                     </tbody>

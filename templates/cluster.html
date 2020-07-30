@@ -5,63 +5,66 @@
 
 <!-- cluster stats -->
 <div class="row">
-
-    <div class="col">
-
-<div class="card text-center">
-            <div class="card-body">
-                <b>{{active_users}} Active Users</b>
-                <div class="small">
-                    {{total_users}} Total Users
-                </div>
-            </div>
+  <div class="col">
+    <div class="card text-center">
+      <div class="card-body">
+        <b>{{active_users}} Active Users</b>
+        <div class="small">
+          {{total_users}} Total Users
         </div>
+      </div>
     </div>
-
-    <div class="col">
-<div class="card text-center">
-    <div class="card-body">
+  </div>
+  <div class="col">
+    <div class="card text-center">
+      <div class="card-body">
         <b>{{active_accounts}} Active Accounts</b>
         <div class="small">
-            {{total_accounts}} Total Accounts
+          {{total_accounts}} Total Accounts
         </div>
+      </div>
     </div>
-</div>
-</div>
-
-    <div class="col">
-<div class="card text-center">
-    <div class="card-body">
+  </div>
+  <div class="col">
+    <div class="card text-center">
+      <div class="card-body">
         <b>{{total_score['cpu-score']}}% Core Efficiency</b>
         <div class="small">
-            {{((total_usage['cputime'] / (60*60))|int) if total_usage['cputime'] else 0}} Core Hours
+          {{((total_usage['cputime'] / (60*60))|int) if total_usage['cputime'] else 0}} Core Hours
         </div>
+      </div>
     </div>
-</div>
-</div>
-
-    <div class="col">
-<div class="card text-center">
-    <div class="card-body">
+  </div>
+  <div class="col">
+    <div class="card text-center">
+      <div class="card-body">
         <b>{{total_score['mem-score']}}% Memory Efficiency</b>
         <div class="small">
-            {{(total_usage['memuse'] / 1024)|int}} GB
+          {{(total_usage['memuse'] / 1024)|int}} GB
         </div>
+      </div>
     </div>
-</div>
-</div>
-
+  </div>
     <div class="col">
-<div class="card text-center">
-    <div class="card-body">
-        <b>{{total_score['tlimit-score']}}% Time Efficiency</b>
-        <div class="small">
+      <div class="card text-center">
+	<div class="card-body">
+          <b>{{total_score['tlimit-score']}}% Time Efficiency</b>
+          <div class="small">
             {{(total_usage['timeuse'] / (60*60))|int}} Hours
-        </div>
+          </div>
+	</div>
+      </div>
     </div>
-</div>
-</div>
-
+    <div class="col">
+      <div class="card text-center">
+	<div class="card-body">
+          <b>GPU Usage</b>
+          <div class="small">
+	    {{(total_usage['gpuhours'] | int)}} Hours
+          </div>
+	</div>
+      </div>
+    </div>
 </div>
 
 <!-- graphs -->
