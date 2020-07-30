@@ -60,8 +60,8 @@
                         <td>{{i['time limit']|round(2) if i['time limit'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td>
 			<td>{{i['gpu']|round(2) if i['gpu'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td>
 			<td>{{i['total efficiency']|round(2) if i['total efficiency'] != '-' else i['total efficiency']}}</td>
-                        <td>{{i['core hours']}}</td>
-                        <td>{{i['gpu hours']}}</td>
+                        <td>{{i['core hours']|float|round(2) if i['core hours'] != '-' else i['core hours']}}</td>
+                        <td>{{i['gpu hours']|float|round(2) if i['gpu hours'] != '-' else i['gpu hours']}}</td>
                     </tr>
                     {% endfor %}
                     </tbody>
