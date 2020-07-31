@@ -28,9 +28,9 @@
   <div class="col">
     <div class="card text-center">
       <div class="card-body">
-        <b>{{total_score['cpu-score']}}% Core Efficiency</b>
+        <b>{{total_score['cpu-score']}}% CPU Efficiency</b>
         <div class="small">
-          {{((total_usage['cputime'] / (60*60))|int) if total_usage['cputime'] else 0}} Core Hours
+          {{((total_usage['cputime'] / (60*60))|int) if total_usage['cputime'] else 0}} CPU Hours
         </div>
       </div>
     </div>
@@ -55,16 +55,16 @@
 	</div>
       </div>
     </div>
-    <div class="col">
-      <div class="card text-center">
-	<div class="card-body">
-          <b>GPU Usage</b>
-          <div class="small">
-	    {{(total_usage['gpuhours'] | int)}} Hours
-          </div>
-	</div>
+  <div class="col">
+    <div class="card text-center">
+      <div class="card-body">
+        <b>{{total_score['gpu-score']}}% GPU Efficiency</b>
+        <div class="small">
+          {{((total_usage['gpuhours'] | int) if total_usage['cputime'] else 0)}} GPU Hours
+        </div>
       </div>
     </div>
+  </div>
 </div>
 
 <!-- graphs -->

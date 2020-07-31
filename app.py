@@ -397,7 +397,7 @@ def renderGraph(graph_function, data_set):
         data = getScore(since=date.today()-timedelta(days), by_date=True)
 
         data_points = {
-            'cores': [],
+            'cpu': [],
             'memory': [],
             'time limit': [],
             'total efficiency': [],
@@ -409,13 +409,13 @@ def renderGraph(graph_function, data_set):
             if current in data:
                 score = data[current]
                
-                data_points['cores'].append(score['cpu-score'])
+                data_points['cpu'].append(score['cpu-score'])
                 data_points['memory'].append(score['mem-score'])
                 data_points['time limit'].append(score['tlimit-score'])
                 data_points['gpu'].append(score['gpu-score'])
                 data_points['total efficiency'].append(score['total'])
             else:
-                data_points['cores'].append(None)
+                data_points['cpu'].append(None)
                 data_points['memory'].append(None)
                 data_points['time limit'].append(None)
                 data_points['gpu'].append(None)
@@ -592,7 +592,7 @@ def renderAccountLineGraph(account_name):
     line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 1, -1)]
 
     data_points = {
-        'cores': [],
+        'cpu': [],
         'memory': [],
         'time limit': [],
         'total efficiency': [],
@@ -604,13 +604,13 @@ def renderAccountLineGraph(account_name):
         if current in data:
             score = normalize(data[current], all_scores=True)
 
-            data_points['cores'].append(score['cpu-score'])
+            data_points['cpu'].append(score['cpu-score'])
             data_points['memory'].append(score['mem-score'])
             data_points['time limit'].append(score['tlimit-score'])
             data_points['gpu'].append(score['gpu-score'])
             data_points['total efficiency'].append(score['total'])
         else:
-            data_points['cores'].append(None)
+            data_points['cpu'].append(None)
             data_points['memory'].append(None)
             data_points['time limit'].append(None)
             data_points['gpu'].append(None)
@@ -641,7 +641,7 @@ def renderAccountUsersGraph(account_name):
 
     # Render the pie graph
     pie_graph = pygal.Pie()
-    pie_graph.title = 'Core Hours Per User'
+    pie_graph.title = 'CPU Hours Per User'
     for i in sorted(data.keys()):
         pie_graph.add(i, [{
             "value": data[i],
@@ -771,7 +771,7 @@ def renderUserAccountLineGraph(user_name, account=None):
     line_graph.x_labels = [date.today() - timedelta(i) for i in range(days)]
 
     data_points = {
-        'cores': [],
+        'cpu': [],
         'memory': [],
         'time limit': [],
         'total efficiency': [],
@@ -783,13 +783,13 @@ def renderUserAccountLineGraph(user_name, account=None):
         if current in data:
             score = normalize(data[current], all_scores=True)
             
-            data_points['cores'].append(score['cpu-score'])
+            data_points['cpu'].append(score['cpu-score'])
             data_points['memory'].append(score['mem-score'])
             data_points['time limit'].append(score['tlimit-score'])
             data_points['gpu'].append(score['gpu-score'])
             data_points['total efficiency'].append(score['total'])
         else:
-            data_points['cores'].append(None)
+            data_points['cpu'].append(None)
             data_points['memory'].append(None)
             data_points['gpu'].append(None)
             data_points['time limit'].append(None)

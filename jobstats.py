@@ -103,10 +103,10 @@ class Jobstats:
             try:
                 # IMPORTANT: gputime and idealgpu are in seconds
                 #            similar to cputime and idealcpu
-                gpu_dict[key][0] += gputime / 3600.0
-                gpu_dict[key][1] += idealgpu / 3600.0
+                gpu_dict[key][0] += gputime
+                gpu_dict[key][1] += idealgpu
             except:
-                gpu_dict[key] = [gputime / 3600.0, idealgpu / 3600.0]
+                gpu_dict[key] = [gputime, idealgpu]
 
         for key in gpu_dict:
             username, account, date = key.split(":")
@@ -114,8 +114,8 @@ class Jobstats:
                 if result[i]['username'] == username and \
                    result[i]['account'] == account and \
                    result[i]['date'].strftime('%Y-%m-%d') == date:
-                    result[i]['gpuhours'] = gpu_dict[key][0]
-                    result[i]['gpureq'] = gpu_dict[key][1]
+                    result[i]['gpuhours'] = gpu_dict[key][0] / 3600.0
+                    result[i]['gpureq'] = gpu_dict[key][1] / 3600.0
 
 
         for i in range(len(result)):
