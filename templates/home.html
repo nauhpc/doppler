@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <title> Monsoon Jobstats </title>
 
-
 <!-- account ranks  -->
-<div class="row">    
+<div class="row">
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
@@ -30,25 +30,38 @@
                         {% endif %}
                     {% endif %}
                 </h5>
+                <div>
+                </div>
                 <table id="table" class="table table-striped table-bordered">
-                    <thead>
-                    <tr> <th>rank</th> <th>account</th> <th>cores</th> <th>memory</th> <th>time
-                    limit</th><th>total efficiency</th>  <th>core hours</th> </tr>
-                    </thead>
+                  <thead>
+                    <tr>
+                      <th>rank</th>
+                      <th>acct</th>
+                      <th>cpu eff</th>
+                      <th>mem eff</th>
+                      <th>time eff</th>
+                      <th>gpu eff</th>
+                      <th>total eff</th>                      
+                      <th>cpu hrs</th>
+                      <th>gpu hrs</th>
+                    </tr>
+                  </thead>
                     <tbody>
                     {% for i in account_ranks %}
                     <tr>
-                        <th scope="row">{{i[0]}}</th>
+                        <th scope="row">{{i['rank']}}</th>
                         {% if view == 'users' %} 
-                        <td><a href={{url_for('viewUser', user_name=i[1], time=time, view=view)}}>{{i[1]}}</a></td> 
+                        <td><a href={{url_for('viewUser', user_name=i['name'], time=time, view=view)}}>{{i['name']}}</a></td> 
                         {% else %}
-                        <td><a href={{url_for('viewAccount', account_name=i[1], time=time, view=view)}}>{{i[1]}}</a></td> 
+                        <td><a href={{url_for('viewAccount', account_name=i['name'], time=time, view=view)}}>{{i['name']}}</a></td> 
                         {% endif %}
-                        <td>{{i[2]|round(2) if i[2] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td> 
-                        <td>{{i[3]|round(2) if i[3] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td> 
-                        <td>{{i[4]|round(2) if i[4] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td>
-                        <td>{{i[5]|round(2) if i[5] != '-' else i[5]}}</td>
-			<td>{{i[6]}}</td>
+                        <td>{{i['cores']|round(2) if i['cores'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td> 
+                        <td>{{i['memory']|round(2) if i['memory'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td>
+                        <td>{{i['time limit']|round(2) if i['time limit'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td>
+			<td>{{i['gpu']|round(2) if i['gpu'] != '-' else '<div title="This user used the minimum value for this resource. A score was not calculated." style="color: green;">0</div>'|safe}}</td>
+			<td>{{i['total efficiency']|round(2) if i['total efficiency'] != '-' else i['total efficiency']}}</td>
+                        <td>{{i['core hours']|float|round(2) if i['core hours'] != '-' else i['core hours']}}</td>
+                        <td>{{i['gpu hours']|float|round(2) if i['gpu hours'] != '-' else i['gpu hours']}}</td>
                     </tr>
                     {% endfor %}
                     </tbody>
