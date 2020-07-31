@@ -58,9 +58,9 @@
   <div class="col">
     <div class="card text-center">
       <div class="card-body">
-        <b>{{total_score['gpu-score']}}% GPU Efficiency</b>
+        <b>{{((total_score['gpu-score'] | float) if total_usage['gpu-score'] else 0)}}% GPU Efficiency</b>
         <div class="small">
-          {{((total_usage['gpuhours'] | int) if total_usage['cputime'] else 0)}} GPU Hours
+          {{((total_usage['gpuhours'] | int) if total_usage['gpuhours'] else 0)}} GPU Hours
         </div>
       </div>
     </div>
