@@ -768,7 +768,7 @@ def renderUserAccountLineGraph(user_name, account=None):
         line_graph.title = user_name + ' Efficiency'
 
 
-    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days)]
+    line_graph.x_labels = [date.today() - timedelta(i) for i in range(days, 1, -1)]
 
     data_points = {
         'cpu': [],
@@ -791,6 +791,7 @@ def renderUserAccountLineGraph(user_name, account=None):
         else:
             data_points['cpu'].append(None)
             data_points['memory'].append(None)
+            data_points['time limit'].append(None)
             data_points['gpu'].append(None)
             data_points['time limit'].append(None)
     
