@@ -1,8 +1,0 @@
-[DB]
-username=username
-password=password
-host=127.0.0.1
-
-[SCORES]
-normalize=score
-ideal score=100
