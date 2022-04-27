@@ -4,18 +4,21 @@
 
 This repository contains the grafana dashboards we use to display metrics from our MySQL database with grafana. These dashboards help us examine user and account efficiency for workloads researchers execute on the "Monsoon" cluster at NAU.
 
-## Software Stack
+## Database Setup
 
-As of this update:
+The dashboard expects the MySQL database to have tables setup by our [jobstats](https://github.com/nauhpc/jobstats) and [jobstats-db](https://github.com/nauhpc/jobstats-db) projects.
+
+[jobstats](https://github.com/nauhpc/jobstats) is a wrapper for the [sacct](https://slurm.schedmd.com/sacct.html) command which includes data from the [seff](https://bugs.schedmd.com/show_bug.cgi?id=1611) command. The primary advantage of it is how it calculates job efficiency which makes it easier for end-users to more efficiently submit [Slurm](https://slurm.schedmd.com/) jobs.
+
+The [jobstats-db](https://github.com/nauhpc/jobstats-db) project includes a populateDatabase script that we run daily in a cronjob to get new job efficiency metrics into our MySQL instance. The grafana dashboards listed here will not work without this data.
+
+## Software Requirements
 
 1. RHEL/CENTOS
    - Our servers either run RHEL 8 or Centos Stream release 8
-2. MySQL
-   - rpm: mariadb-server-10.3.28-1.module+el8.3.0+10472+7adc332a.x86_64
+2. MariaDB
 3. Grafana
-   - rpm: grafana-8.3.4-1.x86_64
 4. Apache
-   - rpm: httpd-2.4.37-21.module_el8.2.0+494+1df74eae.x86_64
 
 ## How do I import these dashboards into grafana?
 
