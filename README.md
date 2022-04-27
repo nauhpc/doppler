@@ -4,18 +4,57 @@
 
 This repository contains the grafana dashboards we use to display metrics from our MySQL database with grafana. These dashboards help us examine user and account efficiency for workloads researchers execute on the "Monsoon" cluster at NAU.
 
+The purpose of this project is to gamify job efficiency, encouraging users to submit efficient workloads. The grafana dashboards make it easy for users to see different aspects of their cluster usage, and how their efficiency statistics compare to other users.
+
 ## Database Setup
 
-The dashboard expects the MySQL database to have tables setup by our [jobstats](https://github.com/nauhpc/jobstats) and [jobstats-db](https://github.com/nauhpc/jobstats-db) projects.
+The dashboard expects the MySQL database to have tables setup by our [jobstats](https://github.com/nauhpc/jobstats), [gpustats](https://github.com/nauhpc/gpustats), and [jobstats-db](https://github.com/nauhpc/jobstats-db) projects.
 
-[jobstats](https://github.com/nauhpc/jobstats) is a wrapper for the [sacct](https://slurm.schedmd.com/sacct.html) command which includes data from the [seff](https://bugs.schedmd.com/show_bug.cgi?id=1611) command. The primary advantage of it is how it calculates job efficiency which makes it easier for end-users to more efficiently submit [Slurm](https://slurm.schedmd.com/) jobs.
-
-The [jobstats-db](https://github.com/nauhpc/jobstats-db) project includes a populateDatabase script that we run daily in a cronjob to get new job efficiency metrics into our MySQL instance. The grafana dashboards listed here will not work without this data.
+- [jobstats](https://github.com/nauhpc/jobstats)
+  - Includes the [jobstats script](https://github.com/nauhpc/jobstats/blob/master/jobstats/jobstats) which is a wrapper for the [sacct](https://slurm.schedmd.com/sacct.html) command and includes data from [seff](https://bugs.schedmd.com/show_bug.cgi?id=1611). The primary advantage of the [jobstats script](https://github.com/nauhpc/jobstats/blob/master/jobstats/jobstats) is how it calculates job efficiency which makes it easier for end-users to more efficiently submit [Slurm](https://slurm.schedmd.com/) jobs.
+- [gpustats](https://github.com/nauhpc/gpustats)
+  - gpustats requires some setup on any gpu nodes, and additionally depends on the nvidia-smi binary. It edits the Comment field of slurm jobs to include JSON-formatted text, describing the efficiency of any GPU-enabled jobs.
+- [jobstats-db](https://github.com/nauhpc/gpustats)
+  - This project has scripts that manage the MySQL database tables for the grafana dashboards. The most important part is the [populateDatabase script](https://github.com/nauhpc/jobstats-db/blob/master/PopulateDatabase) which runs in a daily cronjob, ingesting new metrics.
+  - The populateDatabase script expects to see a jobstats command, it will not work if you do not integrate the jobstats project.
+    - The gpustats project is optional, but you'll be missing any gpu usage data without it.
+  - Here is what the two dependent tables (jobs and gpuinfo) look like in MySQL:
+```
+(jobs)
++-----------+-------------+------+-----+---------+-------+
+| Field     | Type        | Null | Key | Default | Extra |
++-----------+-------------+------+-----+---------+-------+
+| username  | varchar(10) | NO   | PRI | NULL    |       |
+| account   | varchar(20) | NO   | PRI | NULL    |       |
+| date      | date        | NO   | PRI | NULL    |       |
+| idealcpu  | float       | YES  |     | NULL    |       |
+| memoryreq | int(11)     | YES  |     | NULL    |       |
+| tlimitreq | int(11)     | YES  |     | NULL    |       |
+| cputime   | float       | YES  |     | NULL    |       |
+| tlimituse | int(11)     | YES  |     | NULL    |       |
+| memoryuse | int(11)     | YES  |     | NULL    |       |
+| jobsum    | int(11)     | NO   |     | NULL    |       |
++-----------+-------------+------+-----+---------+-------+
+```
+```
+(gpuinfo)
++----------+-------------+------+-----+---------+-------+
+| Field    | Type        | Null | Key | Default | Extra |
++----------+-------------+------+-----+---------+-------+
+| username | varchar(10) | YES  |     | NULL    |       |
+| account  | varchar(20) | YES  |     | NULL    |       |
+| date     | date        | YES  |     | NULL    |       |
+| jobid    | varchar(20) | YES  | UNI | NULL    |       |
+| ngpu     | int(11)     | YES  |     | NULL    |       |
+| gputime  | double      | YES  |     | NULL    |       |
+| idealgpu | double      | YES  |     | NULL    |       |
++----------+-------------+------+-----+---------+-------+
+```
 
 ## Software Requirements
 
 1. RHEL/CENTOS
-   - Our servers either run RHEL 8 or Centos Stream release 8
+   - Our servers either run RHEL 8 or CentOS Stream release 8
 2. MariaDB
 3. Grafana
 4. Apache
