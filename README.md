@@ -6,7 +6,7 @@ This repository contains the grafana dashboards we use to display metrics from o
 
 The purpose of this project is to gamify job efficiency, encouraging users to submit efficient workloads. The grafana dashboards make it easy for users to see different aspects of their cluster usage, and how their efficiency statistics compare to other users.
 
-On all of the tables in this dashboard, clicking on a username or account name, will open up a link to a dashboard showing the efficiency and usage statistics for that only that user or account. This interactivity makes it easy to drill down into the details.
+On all of the tables in this dashboard, clicking on a username or account name will open up a link to a dashboard showing the efficiency and usage statistics for only that user or account. This interactivity makes it easy to drill down into the details.
 
 ## Database Setup
 
