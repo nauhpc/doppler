@@ -6,6 +6,8 @@ This repository contains the grafana dashboards we use to display metrics from o
 
 The purpose of this project is to gamify job efficiency, encouraging users to submit efficient workloads. The grafana dashboards make it easy for users to see different aspects of their cluster usage, and how their efficiency statistics compare to other users.
 
+On all of the tables in this dashboard, clicking on a username or account name, will open up a link to a dashboard showing the efficiency and usage statistics for that only that user or account. This interactivity makes it easy to drill down into the details.
+
 ## Database Setup
 
 The dashboard expects the MySQL database to have tables setup by our [jobstats](https://github.com/nauhpc/jobstats), [gpustats](https://github.com/nauhpc/gpustats), and [jobstats-db](https://github.com/nauhpc/jobstats-db) projects.
@@ -89,9 +91,9 @@ Or refer to the official grafana [documentation](https://grafana.com/docs/grafan
 
     - Cluster Efficiency 2 - Aggregate job efficiency, the sum of resource usage over the total amount of resources allocated requested by the slurm scheduler, for each day.
 
-    - Account Ranking - A table, showing the efficiency and usage for workloads submitted by each research group's account. Ranks are based on the total_eff column by default.
+    - Account Ranking - A table, showing the efficiency and usage for workloads submitted by each research group's account. Ranks are based on the total_eff column by default. Clicking any of the account names will open up a new tab and show the statistics for the entire account.
 
-    - User Ranking - A table, showing the efficiency and usage for workloads submitted by each user. Ranks are based on the total_eff column by default.
+    - User Ranking - A table, showing the efficiency and usage for workloads submitted by each user. Ranks are based on the total_eff column by default. Clicking any of the usernames will open up a new tab and show the statistics for only that user.
 
 - Doppler (Account View)
 
@@ -105,7 +107,7 @@ Or refer to the official grafana [documentation](https://grafana.com/docs/grafan
 
     - Average Efficiencies: a set of gauges that show the aggregate efficiency over the whole time period.
 
-    - User Stats: A table, with one row for member of the account that has submitted a job within the time period (active), shows efficiency and usage metrics.
+    - User Stats: A table, with one row for member of the account that has submitted a job within the time period (active), shows efficiency and usage metrics. Clicking any of the usernames will open up a new tab and show the statistics for only that user.
 
 - Doppler (User View)
 
@@ -117,4 +119,4 @@ Or refer to the official grafana [documentation](https://grafana.com/docs/grafan
 
     - Average Efficiencies: a set of gauges that show the aggregate efficiency over the whole time period.
 
-    - Account Stats: Table with one entry for each account for which the user is a member and has submitted jobs under within the selected time frame. The inverse of the User Stats table from the "Doppler (Account View)" dashboard.
+    - Account Stats: Table with one entry for each account for which the user is a member and has submitted jobs under within the selected time frame. The inverse of the User Stats table from the "Doppler (Account View)" dashboard. Clicking any of the account names will open up a new tab and show the statistics for the entire account.
