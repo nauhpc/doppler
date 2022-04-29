@@ -1,0 +1,1016 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 21,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "KoyFrCy7z"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.8
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "core_hours"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "core hours"
+              },
+              {
+                "id": "unit",
+                "value": "h"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gpu_hours"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "gpu hours"
+              },
+              {
+                "id": "unit",
+                "value": "h"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mem"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "mem"
+              },
+              {
+                "id": "unit",
+                "value": "decgbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tlimituse"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "job time"
+              },
+              {
+                "id": "unit",
+                "value": "h"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {
+          "titleSize": 16
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.3.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT sum(cputime) / 3600 AS core_hours FROM jobs WHERE (date BETWEEN $__timeFrom() AND $__timeTo());",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT sum(gputime) / 3600 AS gpu_hours FROM gpuinfo WHERE (date BETWEEN $__timeFrom() AND $__timeTo());",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT sum(memoryuse) AS mem FROM jobs WHERE (date BETWEEN $__timeFrom() AND $__timeTo());",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT sum(tlimituse) / 3600 AS tlimituse FROM jobs WHERE (date BETWEEN $__timeFrom() AND $__timeTo());",
+          "refId": "D",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS 'active users' FROM (SELECT COUNT(username) FROM jobs WHERE (date BETWEEN $__timeFrom() AND $__timeTo()) GROUP BY username ORDER BY sum(jobsum) DESC) as x;",
+          "refId": "E",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS 'active accts' FROM (SELECT COUNT(account) FROM jobs WHERE (date BETWEEN $__timeFrom() AND $__timeTo()) GROUP BY account ORDER BY sum(jobsum) DESC) as x;",
+          "refId": "F",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Total Usage",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "KoyFrCy7z"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(cputime) / sum(idealcpu)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "cpu eff"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(gputime) / sum(idealgpu)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "gpu eff"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(memoryuse) / sum(memoryreq)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "mem eff"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(tlimituse) / sum(tlimitreq)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "time eff"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(eff)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "total eff"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "pluginVersion": "8.3.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT UNIX_TIMESTAMP(STR_TO_DATE(t1.date, '%Y-%m-%d')) AS time,\n       t1.cpu_eff,\n       t2.gpu_eff,\n       t1.mem_eff,\n       t1.time_eff,\n       ((IFNULL(t1.cpu_eff, 0) + t1.mem_eff + t1.time_eff + IFNULL(t2.gpu_eff, 0)) / (2.0 + IF(ISNULL(t1.cpu_eff), 0, 1) + IF(ISNULL(t2.gpu_eff), 0, 1))) AS total_eff\nFROM (\n     SELECT date,\n            account,\n            SUM(cputime) / SUM(idealcpu) AS cpu_eff,\n            SUM(memoryuse) / SUM(memoryreq) AS mem_eff,\n            SUM(tlimituse) / SUM(tlimitreq) AS time_eff\n     FROM jobs\n     WHERE (date BETWEEN $__timeFrom() AND $__timeTo())\n     GROUP BY date\n     )t1\nLEFT JOIN (\n          SELECT date,\n                 account,\n                 SUM(gputime) / SUM(idealgpu) AS gpu_eff\n          FROM gpuinfo\n          WHERE (date BETWEEN $__timeFrom() AND $__timeTo())\n          GROUP BY date\n          )t2\nON t1.date = t2.date;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Cluster Efficiency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "KoyFrCy7z"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-RdYlGr"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(cputime) / sum(idealcpu)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "cpu eff"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(gputime) / sum(idealgpu)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "gpu eff"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(memoryuse) / sum(memoryreq)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "mem eff"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(tlimituse) / sum(tlimitreq)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "time eff"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sum(eff)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "total eff"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 3
+      },
+      "id": 5,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "8.3.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "account",
+          "rawQuery": true,
+          "rawSql": "SELECT sum(cputime) / sum(idealcpu)  AS cpu_eff FROM jobs WHERE (date BETWEEN $__timeFrom() AND $__timeTo());",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "jobsum"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "jobs",
+          "timeColumn": "time",
+          "where": []
+        },
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "account",
+          "rawQuery": true,
+          "rawSql": "SELECT sum(gputime) / sum(idealgpu) AS gpu_eff FROM gpuinfo WHERE (date BETWEEN $__timeFrom() AND $__timeTo());",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "jobsum"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "jobs",
+          "timeColumn": "time",
+          "where": []
+        },
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "account",
+          "rawQuery": true,
+          "rawSql": "SELECT sum(memoryuse) / sum(memoryreq) AS mem_eff FROM jobs WHERE (date BETWEEN $__timeFrom() AND $__timeTo());",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "jobsum"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "jobs",
+          "timeColumn": "time",
+          "where": []
+        },
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "account",
+          "rawQuery": true,
+          "rawSql": "SELECT sum(tlimituse) / sum(tlimitreq) AS time_eff FROM jobs WHERE (date BETWEEN $__timeFrom() AND $__timeTo());",
+          "refId": "D",
+          "select": [
+            [
+              {
+                "params": [
+                  "jobsum"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "jobs",
+          "timeColumn": "time",
+          "where": []
+        },
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "account",
+          "rawQuery": true,
+          "rawSql": "SELECT ((IFNULL(t1.cpu_eff, 0) + t1.mem_eff + t1.time_eff + IFNULL(t2.gpu_eff, 0)) / (2.0 + IF(ISNULL(t1.cpu_eff), 0, 1) + IF(ISNULL(t2.gpu_eff), 0, 1))) AS total_eff\nFROM (\n     SELECT SUM(cputime) / SUM(idealcpu) AS cpu_eff,\n            SUM(memoryuse) / SUM(memoryreq) AS mem_eff,\n            SUM(tlimituse) / SUM(tlimitreq) AS time_eff\n     FROM jobs\n     WHERE (date BETWEEN $__timeFrom() AND $__timeTo())\n     )t1\nINNER JOIN (\n          SELECT SUM(gputime) / SUM(idealgpu) AS gpu_eff\n          FROM gpuinfo\n          WHERE (date BETWEEN $__timeFrom() AND $__timeTo())\n          )t2;",
+          "refId": "E",
+          "select": [
+            [
+              {
+                "params": [
+                  "jobsum"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "jobs",
+          "timeColumn": "time",
+          "where": []
+        }
+      ],
+      "title": "Cluster Efficiency",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "KoyFrCy7z"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "left",
+            "displayMode": "auto",
+            "minWidth": 10
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "account"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "",
+                    "url": "https://siris.hpc.nau.edu/grafana/d/hgo8b_Unk/doppler-account-view?orgId=1&var-account=${__data.fields.account}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*_eff"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 20,
+      "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "rank"
+          }
+        ]
+      },
+      "pluginVersion": "8.3.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT RANK() OVER ( ORDER BY total_eff DESC ) AS rank,\n       t1.account,\n       t1.cpu_eff,\n       t1.mem_eff,\n       t1.time_eff,\n       t2.gpu_eff,\n       ((IFNULL(t1.cpu_eff, 0) + t1.mem_eff + t1.time_eff + IFNULL(t2.gpu_eff, 0)) / (2.0 + IF(ISNULL(t1.cpu_eff), 0, 1) + IF(ISNULL(t2.gpu_eff), 0, 1))) AS total_eff,\n       t1.cpu_hours,\n       t2.gpu_hours\nFROM (\n     SELECT account,\n            SUM(cputime) / SUM(idealcpu) AS cpu_eff,\n            SUM(memoryuse) / SUM(memoryreq) AS mem_eff,\n            SUM(tlimituse) / SUM(tlimitreq) AS time_eff,\n            SUM(cputime) / 3600 AS cpu_hours\n     FROM jobs\n     WHERE (date BETWEEN $__timeFrom() AND $__timeTo())\n     GROUP BY account\n     )t1\nLEFT JOIN (\n          SELECT account,\n                 SUM(gputime) / SUM(idealgpu) AS gpu_eff,\n                 SUM(gputime) / 3600 AS gpu_hours\n          FROM gpuinfo\n          WHERE (date BETWEEN $__timeFrom() AND $__timeTo())\n          GROUP BY account\n          )t2\nON t1.account = t2.account\nORDER BY rank;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Account Ranking (All Active Accounts)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "KoyFrCy7z"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "left",
+            "displayMode": "auto",
+            "minWidth": 10
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "username"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "",
+                    "url": "https://siris.hpc.nau.edu/grafana/d/SgcIYzwnk/doppler-user-view?orgId=1&var-user=${__data.fields.username}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*_eff"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 21,
+      "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "total_eff"
+          }
+        ]
+      },
+      "pluginVersion": "8.3.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "mysql",
+            "uid": "KoyFrCy7z"
+          },
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT RANK() OVER ( ORDER BY total_eff DESC ) AS rank,\n       t1.username,\n       t1.cpu_eff,\n       t1.mem_eff,\n       t1.time_eff,\n       t2.gpu_eff,\n       ((IFNULL(t1.cpu_eff, 0) + t1.mem_eff + t1.time_eff + IFNULL(t2.gpu_eff, 0)) / (2.0 + IF(ISNULL(t1.cpu_eff), 0, 1) + IF(ISNULL(t2.gpu_eff), 0, 1))) AS total_eff,\n       t1.cpu_hours,\n       t2.gpu_hours\nFROM (\n     SELECT username,\n            SUM(cputime) / SUM(idealcpu) AS cpu_eff,\n            SUM(memoryuse) / SUM(memoryreq) AS mem_eff,\n            SUM(tlimituse) / SUM(tlimitreq) AS time_eff,\n            SUM(cputime) AS cpu_hours\n     FROM jobs\n     WHERE (date BETWEEN $__timeFrom() AND $__timeTo())\n     GROUP BY username\n     )t1\nLEFT JOIN (\n          SELECT username,\n                 SUM(gputime) / SUM(idealgpu) AS gpu_eff,\n                 SUM(gputime) AS gpu_hours\n          FROM gpuinfo\n          WHERE (date BETWEEN $__timeFrom() AND $__timeTo())\n          GROUP BY username\n          )t2\nON t1.username = t2.username\nORDER BY rank;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "User Ranking (All Active Users)",
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 34,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-8d",
+    "to": "now-1d"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Doppler",
+  "uid": "napJCCsnk",
+  "version": 38,
+  "weekStart": ""
+}
